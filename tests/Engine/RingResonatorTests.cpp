@@ -64,7 +64,7 @@ TEST_CASE("a strike rings at multiples of the ring pitch", "[ring]") {
         if (ac > best)
             best = ac, bestLag = lag;
     }
-    REQUIRE(std::abs(bestLag - 48000.0 / 900.0) <= 1.0);
+    REQUIRE(std::abs(bestLag - 48000.0 / 900.0) <= 0.5);
 
     const auto spec = test::spectrum(out, 48000.0);
     for (int k = 1; k <= 5; ++k) {
@@ -97,4 +97,38 @@ TEST_CASE("the ring never builds up DC from the body or the strikes", "[ring]") 
         fromStrikes[i] = struck.process(0.0f, i % 1024 == 0, 1.0f); // a strike per 47 Hz body cycle
     REQUIRE(std::abs(meanOf(fromBody, kOneSecond / 2)) < 0.01);
     REQUIRE(std::abs(meanOf(fromStrikes, kOneSecond / 2)) < 0.01);
+}
+
+TEST_CASE("the lowest ring pitch rings at a 240-sample period", "[ring]") {
+    const auto out = strikeOnce(0.6f, 200.0f, kOneSecond / 2);
+    int bestLag = 0;
+    double best = 0.0;
+    for (int lag = 200; lag <= 280; ++lag) {
+        double ac = 0.0;
+        for (std::size_t i = 0; i + static_cast<std::size_t>(lag) < out.size(); ++i)
+            ac += static_cast<double>(out[i]) * out[i + static_cast<std::size_t>(lag)];
+        if (ac > best)
+            best = ac, bestLag = lag;
+    }
+    REQUIRE(bestLag == 240);
+}
+
+TEST_CASE("sweeping ring and pitch every sample stays finite", "[ring]") {
+    RingResonator ring;
+    for (int i = 0; i < kOneSecond; ++i) {
+        const float t = static_cast<float>(i) / kOneSecond;
+        ring.setRing(t, 200.0f * std::pow(90.0f, t)); // 200 Hz to 18 kHz
+        REQUIRE(
+            std::isfinite(ring.process(0.8f * std::sin(0.01f * static_cast<float>(i)), i % 1024 == 0, 1.0f)));
+    }
+}
+
+TEST_CASE("a DC step at note-on does not thump through the ring", "[ring]") {
+    // The biased drive's DC appears as a step when a hit starts.
+    RingResonator ring;
+    ring.setRing(1.0f, 900.0f);
+    float worst = 0.0f;
+    for (int i = 0; i < kOneSecond / 5; ++i)
+        worst = std::max(worst, std::abs(ring.process(0.25f, false, 1.0f) - 0.25f));
+    REQUIRE(worst < 0.5f);
 }
