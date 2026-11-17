@@ -1,0 +1,48 @@
+/* Duster UI: mockup v1 in Kikrame's locked look. Black and white only. */
+@font-face{font-family:"Departure Mono";src:url("DepartureMono-Regular.woff2") format("woff2");font-display:block}
+:root{--bg:#000;--fg:#fff;--dim:#6b6b6b}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body,#app{height:100%;background:var(--bg);color:var(--fg);overflow:hidden}
+body{font-family:"Departure Mono",ui-monospace,monospace;font-size:11px;line-height:1.5;-webkit-font-smoothing:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;letter-spacing:inherit}
+canvas{display:block;image-rendering:pixelated}
+
+/* shell: fills the plugin window; only the display grows and shrinks */
+.plug3{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;user-select:none;-webkit-user-select:none;background:#000;border:1px solid var(--fg)}
+.top{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--fg);gap:12px}
+.logo{letter-spacing:.3em}
+.preset{display:flex;gap:10px;align-items:center;min-width:0}
+.preset .pname{min-width:200px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.preset button,.division button{padding:0 4px}
+.preset button:hover,.division:not(.dis) button:hover{background:var(--fg);color:#000}
+.mode{display:flex;border:1px solid var(--fg)}.mode button{padding:2px 8px}.mode button.on{background:var(--fg);color:#000}
+.vis{min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+.vis canvas{flex:none} /* sized by snapCanvases() in main.js */
+.row{display:grid;grid-template-columns:repeat(8,1fr);border-top:1px solid var(--fg);padding:0 4px}
+.row > *{padding:12px 0 10px}
+.rumble{grid-column:3/7;border-left:1px solid var(--fg);display:flex;flex-direction:column;align-items:center;gap:4px}
+.rumble .sw{height:40px;display:flex;align-items:center}
+.division{display:flex;gap:6px;align-items:center;color:var(--dim)}
+.division .dname{min-width:72px;text-align:center}
+.division:not(.dis){color:var(--fg)}
+.division.dis button{cursor:default}
+
+/* knobs: Kikrame's, scaling with the window */
+.knob{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:ns-resize;touch-action:none;min-width:0}
+.knob.dis{cursor:default}
+.kface{width:clamp(48px,8.6vw,96px)}
+.kface canvas{margin:0 auto}
+.klbl{letter-spacing:.1em;margin-top:2px;white-space:nowrap}
+.kval{color:var(--dim);min-height:16px;white-space:nowrap}
+.knob.dis .klbl{color:var(--dim)}
+.knob:not(.dis):hover .kval{color:var(--fg)}
+
+/* ÷ as a 5 x 5 pixel glyph: Departure Mono's reads as + at 11 px */
+.obelus{display:inline-block;width:5px;height:5px;margin:0 1px 1px 0;vertical-align:middle;
+  background:linear-gradient(currentColor,currentColor) 2px 0/1px 1px no-repeat,
+    linear-gradient(currentColor,currentColor) 0 2px/5px 1px no-repeat,
+    linear-gradient(currentColor,currentColor) 2px 4px/1px 1px no-repeat}
+
+/* resize grip: the native corner resizer sits under the WebView, so the page draws its own */
+.grip{position:fixed;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;
+  background:linear-gradient(135deg,transparent 0 55%,var(--fg) 55% 62%,transparent 62% 72%,var(--fg) 72% 79%,transparent 79%)}

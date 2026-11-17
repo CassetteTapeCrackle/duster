@@ -10,6 +10,7 @@
 
 #include <juce_events/juce_events.h>
 
+#include "Plugin/DusterEditor.h"
 #include "Plugin/DusterParams.h"
 #include "Plugin/DusterPresets.h"
 #include "Plugin/DusterProcessor.h"
@@ -197,4 +198,57 @@ TEST_CASE("INIT holds every parameter's default", "[presets]") {
         auto* param = p.parameters().getParameter(juce::String(std::string(id)));
         REQUIRE_THAT(param->convertFrom0to1(param->getDefaultValue()), WithinAbs(value, 1e-4));
     }
+}
+
+TEST_CASE("an audition plays the last note and counts as a hit", "[plugin]") {
+    Juce juce;
+    DusterProcessor p;
+    p.prepareToPlay(48000.0, 512);
+    juce::AudioBuffer<float> buffer(2, 512);
+    juce::MidiBuffer midi;
+    p.requestAudition();
+    p.processBlock(buffer, midi);
+    REQUIRE(p.hitCount() == 1);
+    REQUIRE(p.lastNote() == 30);
+    REQUIRE(buffer.getMagnitude(0, 0, 512) > 0.1f);
+    p.processBlock(buffer, midi);
+    REQUIRE(p.hitCount() == 1); // once per request
+}
+
+TEST_CASE("the editor serves every embedded web file", "[plugin]") {
+    Juce juce;
+    const auto paths = DusterEditor::webResourcePaths();
+    REQUIRE(paths.contains("index.html"));
+    REQUIRE(paths.contains("juce/index.js"));
+    for (const auto& path : paths) {
+        INFO(path);
+        REQUIRE(DusterEditor::serveWebResource("/" + path).has_value());
+    }
+    REQUIRE(DusterEditor::serveWebResource("/").has_value());
+    REQUIRE_FALSE(DusterEditor::serveWebResource("/missing.js").has_value());
+}
+
+TEST_CASE("the preview has the display's shape", "[plugin]") {
+    Juce juce;
+    DusterProcessor p;
+    p.setCurrentProgram(k05Program);
+    const auto event = DusterEditor::previewEvent(p.currentSettings(), 30);
+    const auto& lows = *event["lows"].getArray();
+    const auto& highs = *event["highs"].getArray();
+    const auto& pitch = *event["pitchSt"].getArray();
+    REQUIRE(lows.size() == 400);
+    REQUIRE(highs.size() == 400);
+    REQUIRE(pitch.size() == 400);
+    REQUIRE_THAT(static_cast<double>(event["spanMs"]), WithinAbs(390.0, 0.5));
+    REQUIRE_THAT(static_cast<double>(event["noteHz"]), WithinAbs(46.25, 0.01));
+    for (int c = 0; c < 400; ++c)
+        REQUIRE(static_cast<float>(lows[c]) <= static_cast<float>(highs[c]));
+    float lowest = 0.0f, highest = 0.0f;
+    for (int c = 0; c < 400; ++c) {
+        lowest = std::min(lowest, static_cast<float>(lows[c]));
+        highest = std::max(highest, static_cast<float>(highs[c]));
+    }
+    REQUIRE(lowest < -0.5f); // the whole swing, both halves
+    REQUIRE(highest > 0.4f);
+    REQUIRE(static_cast<float>(pitch[0]) > static_cast<float>(pitch[399]));
 }

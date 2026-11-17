@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 
+#include "Plugin/DusterEditor.h"
 #include "Plugin/DusterPresets.h"
 
 using namespace duster;
@@ -55,6 +56,11 @@ void DusterProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
 
     auto renderEngine = [this](float* dest, int count) { engine_.render(dest, count); };
     float* out = buffer.getWritePointer(0);
+    if (auditionRequested_.exchange(false)) {
+        resampler_.advanceToNow(renderEngine);
+        engine_.noteOn(lastNote_.load(), 1.0f);
+        hitCount_.fetch_add(1);
+    }
     int done = 0;
     for (const auto event : midi) {
         const auto message = event.getMessage();
@@ -65,6 +71,8 @@ void DusterProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
         done = at;
         resampler_.advanceToNow(renderEngine);
         engine_.noteOn(message.getNoteNumber(), message.getFloatVelocity());
+        lastNote_.store(message.getNoteNumber());
+        hitCount_.fetch_add(1);
     }
     resampler_.process(out + done, numSamples - done, renderEngine);
     if (buffer.getNumChannels() > 1)
@@ -72,7 +80,7 @@ void DusterProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
 }
 
 juce::AudioProcessorEditor* DusterProcessor::createEditor() {
-    return new juce::GenericAudioProcessorEditor(*this);
+    return new DusterEditor(*this);
 }
 
 const juce::String DusterProcessor::getName() const {

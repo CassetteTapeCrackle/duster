@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
@@ -39,6 +40,13 @@ class DusterProcessor final : public juce::AudioProcessor {
 
     juce::AudioProcessorValueTreeState& parameters() noexcept { return apvts_; }
 
+    // For the editor (message thread). An audition plays the last note at full velocity on the next
+    // block; the hit counter lets the page draw a playhead for every hit.
+    void requestAudition() noexcept { auditionRequested_.store(true); }
+    std::uint32_t hitCount() const noexcept { return hitCount_.load(); }
+    int lastNote() const noexcept { return lastNote_.load(); }
+    duster::KickSettings currentSettings() const noexcept { return reader_.read(); }
+
   private:
     double hostBpm() const noexcept;
 
@@ -47,6 +55,9 @@ class DusterProcessor final : public juce::AudioProcessor {
     duster::DusterEngine engine_;
     duster::HostRateResampler resampler_;
     std::atomic<int> currentProgram_{0};
+    std::atomic<bool> auditionRequested_{false};
+    std::atomic<std::uint32_t> hitCount_{0};
+    std::atomic<int> lastNote_{30}; // F#0, Kick_05's note, until a note is played
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DusterProcessor)
 };
