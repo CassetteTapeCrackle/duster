@@ -11,6 +11,7 @@ namespace {
 constexpr std::array<std::size_t, 4> kRoomDelays = {1153, 1559, 1907, 2341}; // 24 to 49 ms, coprime
 constexpr double kDefaultBpm = 140.0, kMinBpm = 40.0, kMaxBpm = 300.0;
 constexpr float kMinDivisionBeats = 0.125f, kMaxDivisionBeats = 1.0f;
+constexpr float kMinLengthMs = 100.0f, kMaxLengthMs = 2000.0f;
 constexpr float kDrive = 2.0f;
 constexpr float kLowPassHz = 250.0f;
 constexpr float kDuckDepth = 0.8f; // -14 dB under a full kick
@@ -57,17 +58,26 @@ void RumbleBus::setMode(RumbleMode mode) noexcept {
 }
 
 void RumbleBus::setLength(float lengthMs) noexcept {
+    lengthMs = std::clamp(lengthMs, kMinLengthMs, kMaxLengthMs);
+    if (lengthMs == lengthMs_)
+        return; // the plugin calls this every block; skip the pow() work
     lengthMs_ = lengthMs;
     updateDecay();
 }
 
 void RumbleBus::setTempo(double bpm) noexcept {
-    bpm_ = bpm > 0.0 ? std::clamp(bpm, kMinBpm, kMaxBpm) : kDefaultBpm;
+    bpm = bpm > 0.0 ? std::clamp(bpm, kMinBpm, kMaxBpm) : kDefaultBpm;
+    if (bpm == bpm_)
+        return;
+    bpm_ = bpm;
     updateDecay();
 }
 
 void RumbleBus::setDivisionBeats(float beats) noexcept {
-    divisionBeats_ = std::clamp(beats, kMinDivisionBeats, kMaxDivisionBeats);
+    beats = std::clamp(beats, kMinDivisionBeats, kMaxDivisionBeats);
+    if (beats == divisionBeats_)
+        return;
+    divisionBeats_ = beats;
     updateDecay();
 }
 

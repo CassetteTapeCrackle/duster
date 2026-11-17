@@ -86,6 +86,7 @@ TEST_CASE("room rumble rings for its length and stays low", "[rumble]") {
 
 TEST_CASE("taps fall on 1/16 notes at 140 BPM when the host has no tempo", "[rumble]") {
     RumbleBus bus = preparedBus(RumbleMode::Taps);
+    bus.setTempo(100.0);
     bus.setTempo(0.0);
     const auto out = renderRumble(bus, 1.0, 0.0f);
     const double sixteenthMs = 60000.0 / 140.0 / 4.0;
