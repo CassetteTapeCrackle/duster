@@ -21,13 +21,13 @@ constexpr int kMs = 48;
 KickSettings crushed05() {
     KickSettings s;
     s.tuneSt = 0.2f;
-    s.sweepSt = 50.0f;
-    s.snapMs = 5.0f;
+    s.sweepSt = 56.0f;
+    s.snapMs = 3.7f;
     s.lengthMs = 390.0f;
-    s.drive01 = 0.2f;
+    s.drive01 = 0.22f;
     s.bits = 8;
     s.holdFactor = 5;
-    s.toneHz = 7500.0f;
+    s.toneHz = 11500.0f;
     return s;
 }
 

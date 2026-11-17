@@ -99,6 +99,15 @@ if(DUSTER_BUILD_PLUGIN)
     endif()
 endif()
 
+# ---- Dev tool: render presets through the plugin for tuning (renders/ is gitignored) ----
+if(DUSTER_BUILD_PLUGIN)
+    add_executable(DusterRender tools/DusterRender.cpp)
+    target_link_libraries(DusterRender PRIVATE
+        Duster DusterCore juce::juce_audio_formats juce::juce_audio_utils juce::juce_audio_processors
+        juce::juce_gui_extra juce::juce_dsp juce::juce_recommended_config_flags)
+    target_compile_definitions(DusterRender PRIVATE JUCE_WEB_BROWSER=1 JUCE_USE_CURL=0)
+endif()
+
 # ---- Tests (folders mirror Source/) ----
 if(DUSTER_BUILD_TESTS)
     CPMAddPackage("gh:catchorg/Catch2@3.7.1")

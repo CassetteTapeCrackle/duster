@@ -11,7 +11,8 @@ namespace duster {
 namespace {
 constexpr float kVoiceLevel = 0.8f; // a full-velocity hit peaks under the limiter's ceiling
 constexpr float kFadeStep = 1.0f / (3e-3f * static_cast<float>(kEngineRate));
-constexpr float kToneQ = 0.7071f;
+// A gentle knee: matches both of Kick_05's crusher lines (9.55 and 19.15 kHz) at TONE 11.5 kHz.
+constexpr float kToneQ = 0.4f;
 
 float noteHz(int midiNote, float tuneSt) noexcept {
     return 440.0f * std::exp2((static_cast<float>(midiNote) - 69.0f + tuneSt) / 12.0f);
