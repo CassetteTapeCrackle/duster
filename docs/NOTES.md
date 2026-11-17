@@ -39,5 +39,7 @@ size), UI exactly in Kikrame's style. Name: DUSTER (2026-11-17).
 - Samples: `~/LOCAL/Samples Triés/ONESHOTS/Drums/Kick/Mathys Lenne Kicks` (not in the repo)
 
 ## Current state
-- Mockup v1 and the design are approved. The implementation plan lives in the gitignored `docs/superpowers/`.
-- Task 1 done: build, CI, packaging and a silent instrument on `main`. Work continues on branch `v1` (off `dev`).
+- Tasks 1 to 10 done on branch `v1` (draft PR #1 into `dev`): engine, plugin, render and comparison tools, web UI.
+- 05 CRUSHED passes the Kick_05 gate at 44.1 and 48 kHz (`tools/compare_kick.py`). The 3-8 kHz attack stays about 19 dB short.
+- Task 11 first pass: 01 ROOM RUMBLE, 02 HIGH TONE, 06 METAL RING, 05 TAPS. Waiting on the ear pass.
+- Added on request: a DIVISION control for TAPS (1/4 to 1/32 with dotted and triplet steps).
