@@ -26,9 +26,14 @@ enable_testing()
 include(cmake/CPM.cmake)
 
 # ---- Core: pure C++ DSP and engine at 48 kHz, no JUCE. Used by the plugin and the tests. ----
-# Header-only until the first engine source lands; it becomes a STATIC library then.
-add_library(DusterCore INTERFACE)
-target_include_directories(DusterCore INTERFACE Source)
+set(DUSTER_CORE_SOURCES
+    Source/Engine/KickOscillator.cpp
+)
+add_library(DusterCore STATIC ${DUSTER_CORE_SOURCES})
+target_include_directories(DusterCore PUBLIC Source)
+# -ffp-contract=off: no fused multiply-add, so a kick renders the same on arm64 and x86_64.
+target_compile_options(DusterCore PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off)
+set_target_properties(DusterCore PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ---- Plugin ----
 if(DUSTER_BUILD_PLUGIN)
@@ -89,6 +94,7 @@ if(DUSTER_BUILD_TESTS)
     CPMAddPackage("gh:catchorg/Catch2@3.7.1")
     add_executable(DusterTests
         tests/Engine/EngineRateTests.cpp
+        tests/Engine/KickOscillatorTests.cpp
     )
     target_include_directories(DusterTests PRIVATE tests)
     target_link_libraries(DusterTests PRIVATE DusterCore Catch2::Catch2WithMain)
@@ -110,6 +116,7 @@ endif()
 
 # ---- -Werror on our own translation units only (JUCE modules compile inside our targets) ----
 if(DUSTER_WERROR)
+    target_compile_options(DusterCore PRIVATE -Werror)
     file(GLOB_RECURSE DUSTER_OWN_SOURCES CONFIGURE_DEPENDS
          "${CMAKE_SOURCE_DIR}/Source/*.cpp" "${CMAKE_SOURCE_DIR}/tests/*.cpp" "${CMAKE_SOURCE_DIR}/tools/*.cpp")
     set_source_files_properties(${DUSTER_OWN_SOURCES} PROPERTIES COMPILE_OPTIONS -Werror)
