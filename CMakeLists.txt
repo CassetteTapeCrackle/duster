@@ -29,6 +29,7 @@ include(cmake/CPM.cmake)
 set(DUSTER_CORE_SOURCES
     Source/Engine/KickOscillator.cpp
     Source/Engine/RingResonator.cpp
+    Source/Engine/RumbleBus.cpp
     Source/Primitives/Biquad.cpp
 )
 add_library(DusterCore STATIC ${DUSTER_CORE_SOURCES})
@@ -101,6 +102,7 @@ if(DUSTER_BUILD_TESTS)
         tests/Engine/DriveTests.cpp
         tests/Engine/CrusherTests.cpp
         tests/Engine/RingResonatorTests.cpp
+        tests/Engine/RumbleBusTests.cpp
         tests/Primitives/FilterTests.cpp
     )
     target_include_directories(DusterTests PRIVATE tests)
