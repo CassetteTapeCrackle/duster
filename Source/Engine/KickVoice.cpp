@@ -13,13 +13,10 @@ namespace {
 constexpr float kVoiceLevel = 0.8f; // a full-velocity hit peaks under the limiter's ceiling
 constexpr float kFadeStep = 1.0f / (3e-3f * static_cast<float>(kEngineRate));
 
-float noteHz(int midiNote, float tuneSt) noexcept {
-    return 440.0f * std::exp2((static_cast<float>(midiNote) - 69.0f + tuneSt) / 12.0f);
-}
 } // namespace
 
-void KickVoice::start(const KickSettings& settings, int midiNote, float velocity01) noexcept {
-    osc_.start(noteHz(midiNote, settings.tuneSt), settings.sweepSt, settings.snapMs);
+void KickVoice::start(const KickSettings& settings, float velocity01) noexcept {
+    osc_.start(kBaseHz * std::exp2(settings.tuneSt / 12.0f), settings.sweepSt, settings.snapMs);
     driveDc_.reset();
     ring_.reset();
     crusher_.reset();

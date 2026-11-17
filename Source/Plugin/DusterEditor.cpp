@@ -8,6 +8,7 @@
 
 #include "BinaryData.h"
 #include "DusterWebPaths.h"
+#include "Engine/DusterEngine.h"
 #include "Engine/EngineRate.h"
 #include "Engine/KickOscillator.h"
 #include "Engine/PreviewRender.h"
@@ -87,9 +88,9 @@ juce::StringArray DusterEditor::webResourcePaths() {
     return paths;
 }
 
-juce::var DusterEditor::previewEvent(const duster::KickSettings& settings, int midiNote) {
+juce::var DusterEditor::previewEvent(const duster::KickSettings& settings) {
     const juce::ScopedNoDenormals noDenormals; // the render's tails decay into denormals off the audio thread
-    const auto hit = duster::renderPreviewHit(settings, midiNote);
+    const auto hit = duster::renderPreviewHit(settings);
     const double spanMs = static_cast<double>(hit.size()) * 1000.0 / duster::kEngineRate;
     juce::Array<juce::var> lows, highs, pitchSt;
     for (int c = 0; c < kPreviewColumns; ++c) {
@@ -98,8 +99,10 @@ juce::var DusterEditor::previewEvent(const duster::KickSettings& settings, int m
         const auto [low, high] =
             std::minmax_element(hit.begin() + static_cast<std::ptrdiff_t>(from),
                                 hit.begin() + static_cast<std::ptrdiff_t>(std::min(to, hit.size())));
-        lows.add(*low);
-        highs.add(*high);
+        // Drawn relative to the engine's full scale (before the output trim), so a full hit fills the
+        // display.
+        lows.add(*low / duster::DusterEngine::kOutputGain);
+        highs.add(*high / duster::DusterEngine::kOutputGain);
         const auto tMs = static_cast<float>((c + 0.5) * spanMs / kPreviewColumns);
         pitchSt.add(settings.tuneSt + duster::sweepSemitones(tMs, settings.sweepSt, settings.snapMs));
     }
@@ -108,7 +111,7 @@ juce::var DusterEditor::previewEvent(const duster::KickSettings& settings, int m
     event->setProperty("highs", highs);
     event->setProperty("pitchSt", pitchSt);
     event->setProperty("spanMs", spanMs);
-    event->setProperty("noteHz", 440.0 * std::exp2((midiNote - 69) / 12.0));
+    event->setProperty("noteHz", duster::kBaseHz);
     return juce::var(event);
 }
 
@@ -186,8 +189,7 @@ void DusterEditor::resized() {
 
 void DusterEditor::refreshPreview() {
     previewStale_.store(false);
-    previewNote_ = processor_.lastNote();
-    preview_ = previewEvent(processor_.currentSettings(), previewNote_);
+    preview_ = previewEvent(processor_.currentSettings());
     lastPreviewMs_ = juce::Time::getMillisecondCounter();
 }
 
@@ -203,7 +205,7 @@ void DusterEditor::timerCallback() {
         lastHitCount_ = hits;
         browser_.emitEventIfBrowserIsVisible("hit", juce::var());
     }
-    const bool changed = previewStale_.load() || processor_.lastNote() != previewNote_;
+    const bool changed = previewStale_.load();
     // Hidden windows skip the render; the stale flag catches the display up when it shows again.
     if (changed && isShowing() && juce::Time::getMillisecondCounter() - lastPreviewMs_ >= kPreviewEveryMs) {
         refreshPreview();

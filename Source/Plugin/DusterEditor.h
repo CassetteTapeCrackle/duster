@@ -32,7 +32,7 @@ class DusterEditor final : public juce::AudioProcessorEditor,
     // One hit for the display: the lowest and highest sample of each of 400 columns, the pitch in
     // semitones above the note per column,
     // the span in ms and the note's frequency. Renders offline: message thread only.
-    static juce::var previewEvent(const duster::KickSettings& settings, int midiNote);
+    static juce::var previewEvent(const duster::KickSettings& settings);
 
   private:
     void timerCallback() override;
@@ -59,7 +59,6 @@ class DusterEditor final : public juce::AudioProcessorEditor,
 
     juce::var preview_;
     std::atomic<bool> previewStale_{false};
-    int previewNote_ = -1;
     std::uint32_t lastPreviewMs_ = 0;
     std::uint32_t lastHitCount_ = 0;
     int lastProgram_ = -1;

@@ -14,10 +14,14 @@ namespace duster {
 // safety limiter.
 class DusterEngine {
   public:
+    // The last stage, after the limiter: a full-velocity hit peaks near -12 dBFS. Drive, crush and
+    // the rumble all happen before it, so the trim changes the level and nothing else.
+    static constexpr float kOutputGain = 0.31622777f; // -10 dB
+
     void prepare();                                          // allocates; message thread
     void setSettings(const KickSettings& settings) noexcept; // audio thread, once per block
     void setTempo(double bpm) noexcept { rumble_.setTempo(bpm); }
-    void noteOn(int midiNote, float velocity01) noexcept; // takes effect at the next rendered sample
+    void noteOn(float velocity01) noexcept; // takes effect at the next rendered sample
     void render(float* out, int numSamples) noexcept;
 
   private:
@@ -42,7 +46,6 @@ class DusterEngine {
     Ramp drive_, tone_, ring_, amount_;
     bool hasSettings_ = false;
     bool hasPendingNote_ = false;
-    int pendingNote_ = 0;
     float pendingVelocity_ = 0.0f;
 };
 

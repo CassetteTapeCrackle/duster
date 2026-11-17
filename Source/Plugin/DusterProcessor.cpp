@@ -58,7 +58,7 @@ void DusterProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     float* out = buffer.getWritePointer(0);
     if (auditionRequested_.exchange(false)) {
         resampler_.advanceToNow(renderEngine);
-        engine_.noteOn(lastNote_.load(), 1.0f);
+        engine_.noteOn(1.0f);
         hitCount_.fetch_add(1);
     }
     int done = 0;
@@ -70,8 +70,7 @@ void DusterProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
         resampler_.process(out + done, at - done, renderEngine);
         done = at;
         resampler_.advanceToNow(renderEngine);
-        engine_.noteOn(message.getNoteNumber(), message.getFloatVelocity());
-        lastNote_.store(message.getNoteNumber());
+        engine_.noteOn(message.getFloatVelocity());
         hitCount_.fetch_add(1);
     }
     resampler_.process(out + done, numSamples - done, renderEngine);

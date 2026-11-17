@@ -200,7 +200,7 @@ TEST_CASE("INIT holds every parameter's default", "[presets]") {
     }
 }
 
-TEST_CASE("an audition plays the last note and counts as a hit", "[plugin]") {
+TEST_CASE("an audition plays a hit and counts it", "[plugin]") {
     Juce juce;
     DusterProcessor p;
     p.prepareToPlay(48000.0, 512);
@@ -209,8 +209,7 @@ TEST_CASE("an audition plays the last note and counts as a hit", "[plugin]") {
     p.requestAudition();
     p.processBlock(buffer, midi);
     REQUIRE(p.hitCount() == 1);
-    REQUIRE(p.lastNote() == 30);
-    REQUIRE(buffer.getMagnitude(0, 0, 512) > 0.1f);
+    REQUIRE(buffer.getMagnitude(0, 0, 512) > 0.05f);
     p.processBlock(buffer, midi);
     REQUIRE(p.hitCount() == 1); // once per request
 }
@@ -232,7 +231,7 @@ TEST_CASE("the preview has the display's shape", "[plugin]") {
     Juce juce;
     DusterProcessor p;
     p.setCurrentProgram(k05Program);
-    const auto event = DusterEditor::previewEvent(p.currentSettings(), 30);
+    const auto event = DusterEditor::previewEvent(p.currentSettings());
     const auto& lows = *event["lows"].getArray();
     const auto& highs = *event["highs"].getArray();
     const auto& pitch = *event["pitchSt"].getArray();
@@ -251,4 +250,28 @@ TEST_CASE("the preview has the display's shape", "[plugin]") {
     REQUIRE(lowest < -0.5f); // the whole swing, both halves
     REQUIRE(highest > 0.4f);
     REQUIRE(static_cast<float>(pitch[0]) > static_cast<float>(pitch[399]));
+}
+
+TEST_CASE("every MIDI note plays the same kick", "[plugin]") {
+    Juce juce;
+    auto renderNote = [](int note) {
+        DusterProcessor p;
+        p.setCurrentProgram(k05Program);
+        p.prepareToPlay(48000.0, 512);
+        std::vector<float> out;
+        juce::AudioBuffer<float> buffer(2, 512);
+        juce::MidiBuffer midi;
+        midi.addEvent(juce::MidiMessage::noteOn(1, note, 1.0f), 0);
+        for (int block = 0; block < 40; ++block) {
+            p.processBlock(buffer, midi);
+            midi.clear();
+            out.insert(out.end(), buffer.getReadPointer(0), buffer.getReadPointer(0) + 512);
+        }
+        return out;
+    };
+    const auto fSharp0 = renderNote(30);
+    for (const int note : {0, 36, 60, 127}) {
+        INFO("note " << note);
+        REQUIRE(renderNote(note) == fSharp0);
+    }
 }

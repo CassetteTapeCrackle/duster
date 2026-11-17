@@ -25,7 +25,7 @@ struct VoiceControls {
 // SWEEP, SNAP, LENGTH and TUNE are latched at start, so every hit with the same settings is identical.
 class KickVoice {
   public:
-    void start(const KickSettings& settings, int midiNote, float velocity01) noexcept;
+    void start(const KickSettings& settings, float velocity01) noexcept;
     void fadeOut() noexcept { fading_ = active_; } // 3 ms, for a retrigger
     bool active() const noexcept { return active_; }
     bool fading() const noexcept { return fading_; }

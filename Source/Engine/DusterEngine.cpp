@@ -47,9 +47,8 @@ void DusterEngine::setSettings(const KickSettings& settings) noexcept {
     rumble_.setDivisionBeats(settings.rumbleDivisionBeats);
 }
 
-void DusterEngine::noteOn(int midiNote, float velocity01) noexcept {
+void DusterEngine::noteOn(float velocity01) noexcept {
     hasPendingNote_ = true; // a second note before the next sample replaces the first
-    pendingNote_ = midiNote;
     pendingVelocity_ = std::clamp(velocity01, 0.0f, 1.0f);
 }
 
@@ -63,7 +62,7 @@ void DusterEngine::startPendingNote() noexcept {
         });
     for (auto& voice : voices_)
         voice.fadeOut();
-    slot->start(settings_, pendingNote_, pendingVelocity_);
+    slot->start(settings_, pendingVelocity_);
 }
 
 void DusterEngine::render(float* out, int numSamples) noexcept {
@@ -82,6 +81,8 @@ void DusterEngine::render(float* out, int numSamples) noexcept {
         out[i] = kick + rumble_.process(kick, kickEnv);
     }
     limiter_.process(out, numSamples);
+    for (int i = 0; i < numSamples; ++i)
+        out[i] *= kOutputGain;
 }
 
 } // namespace duster

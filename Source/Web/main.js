@@ -16,7 +16,7 @@ app.innerHTML = `
   <div class="plug3">
     <div class="top"><span class="logo">DUSTER</span>
       <span class="preset"><button class="pv" title="Previous preset">&lt;</button><span class="pname"></span><button class="pn" title="Next preset">&gt;</button></span></div>
-    <div class="vis" title="Click or press space to play"></div>
+    <div class="vis" title="Click to play"></div>
     <div class="row main"></div><div class="row bot"></div>
   </div>
   <div class="grip" title="Resize"></div>`;
@@ -54,12 +54,6 @@ const stepPreset = async (d) => {
 app.querySelector(".pv").addEventListener("click", () => stepPreset(-1));
 app.querySelector(".pn").addEventListener("click", () => stepPreset(1));
 vis.addEventListener("click", () => bridge.audition());
-document.addEventListener("keydown", (e) => {
-  if (e.code !== "Space") return;
-  e.preventDefault();
-  if (document.activeElement instanceof HTMLButtonElement) document.activeElement.blur(); // no stray button click
-  if (!e.repeat) bridge.audition();
-});
 
 // Dev preview only: ?preset=1 starts on a preset (the plugin never loads the page with a query).
 const query = new URLSearchParams(location.search);

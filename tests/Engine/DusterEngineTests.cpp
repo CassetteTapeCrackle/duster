@@ -33,7 +33,6 @@ KickSettings crushed05() {
 
 struct Note {
     int atSample;
-    int midiNote;
 };
 
 // Renders `samples` in blocks of `block`, firing each note at its sample. `eachBlock(start, engine)`
@@ -54,7 +53,7 @@ std::vector<float> render(const KickSettings& s, const std::vector<Note>& notes,
         eachBlock(pos, engine);
         for (const auto& note : notes)
             if (note.atSample == pos)
-                engine.noteOn(note.midiNote, velocity);
+                engine.noteOn(velocity);
         engine.render(out.data() + pos, end - pos);
         pos = end;
     }
@@ -82,7 +81,7 @@ float peakAbs(const std::vector<float>& x, std::size_t from = 0, std::size_t to 
 } // namespace
 
 TEST_CASE("05 CRUSHED settings render Kick_05's body and ring", "[engine]") {
-    const auto out = render(crushed05(), {{0, 30}}, 500 * kMs, 1.0f);
+    const auto out = render(crushed05(), {{0}}, 500 * kMs, 1.0f);
     const auto spec = test::spectrum(out, kFs, 100 * kMs, 260 * kMs);
     const double f0 = spec.peakHz(30.0, 80.0);
     REQUIRE_THAT(f0, WithinAbs(46.9, 1.0));
@@ -95,21 +94,21 @@ TEST_CASE("05 CRUSHED settings render Kick_05's body and ring", "[engine]") {
 
 TEST_CASE("a retrigger crossfades without a click", "[engine]") {
     const KickSettings init;
-    const auto retrig = render(init, {{0, 30}, {100 * kMs, 30}}, 200 * kMs, 0.8f);
+    const auto retrig = render(init, {{0}, {100 * kMs}}, 200 * kMs, 0.8f);
     REQUIRE(largestStep(retrig, 99 * kMs, 105 * kMs) < 0.25f);
 
     // Once the old hit has faded, the new one is the solo hit, shifted.
-    const auto solo = render(init, {{0, 30}}, 100 * kMs, 0.8f);
+    const auto solo = render(init, {{0}}, 100 * kMs, 0.8f);
     float worst = 0.0f;
     for (std::size_t i = 4 * kMs; i < 60 * kMs; ++i)
         worst = std::max(worst, std::abs(retrig[100 * kMs + i] - solo[i]));
     REQUIRE(worst < 1e-5f);
 
-    const auto close = render(init, {{0, 30}, {5 * kMs, 30}, {10 * kMs, 30}}, 50 * kMs, 0.8f);
+    const auto close = render(init, {{0}, {5 * kMs}, {10 * kMs}}, 50 * kMs, 0.8f);
     REQUIRE(largestStep(close, 0, close.size()) < 0.1f);
 
     // Three notes inside one 3 ms fade: no voice may be cut while it is still loud.
-    const auto roll = render(init, {{0, 30}, {1 * kMs, 30}, {2 * kMs, 30}}, 50 * kMs, 0.8f);
+    const auto roll = render(init, {{0}, {1 * kMs}, {2 * kMs}}, 50 * kMs, 0.8f);
     REQUIRE(largestStep(roll, 0, roll.size()) < 0.1f);
 }
 
@@ -117,29 +116,30 @@ TEST_CASE("two notes before the same sample play once, the later one", "[engine]
     DusterEngine engine;
     engine.prepare();
     engine.setSettings(KickSettings{});
-    engine.noteOn(30, 1.0f);
-    engine.noteOn(42, 0.5f);
+    engine.noteOn(1.0f);
+    engine.noteOn(0.5f);
     std::vector<float> both(100 * kMs);
     engine.render(both.data(), static_cast<int>(both.size()));
-    const auto later = render(KickSettings{}, {{0, 42}}, 100 * kMs, 0.5f);
+    const auto later = render(KickSettings{}, {{0}}, 100 * kMs, 0.5f);
     REQUIRE(both == later);
 }
 
 TEST_CASE("velocity scales the level, nothing else", "[engine]") {
     const KickSettings init;
-    const auto loud = render(init, {{0, 30}}, 300 * kMs, 1.0f);
-    const auto soft = render(init, {{0, 30}}, 300 * kMs, 0.5f);
+    const auto loud = render(init, {{0}}, 300 * kMs, 1.0f);
+    const auto soft = render(init, {{0}}, 300 * kMs, 0.5f);
     REQUIRE_THAT(test::toDb(peakAbs(soft) / peakAbs(loud)), WithinAbs(-6.02, 0.5));
 }
 
 TEST_CASE("every hit with the same settings is identical", "[engine]") {
-    const auto out = render(crushed05(), {{0, 30}, {500 * kMs, 30}}, 1000 * kMs, 1.0f);
+    const auto out = render(crushed05(), {{0}, {500 * kMs}}, 1000 * kMs, 1.0f);
     for (std::size_t i = 0; i < 500 * kMs; ++i)
         REQUIRE(out[i] == out[500 * kMs + i]);
 }
 
 TEST_CASE("knob corners stay finite and under the ceiling", "[engine]") {
-    KickSettings high;
+    KickSettings high; // the highest start: TUNE +12 and SWEEP +60
+    high.tuneSt = 12.0f;
     high.sweepSt = 60.0f;
     high.snapMs = 1.0f;
     KickSettings harsh;
@@ -149,21 +149,23 @@ TEST_CASE("knob corners stay finite and under the ceiling", "[engine]") {
     harsh.ringPitchHz = 18000.0f;
     harsh.rumbleMode = RumbleMode::Taps;
     harsh.rumbleAmount01 = 1.0f;
-    for (const auto& [s, note] : {std::pair{high, 127}, std::pair{harsh, 30}, std::pair{harsh, 127}}) {
-        const auto out = render(s, {{0, note}, {50 * kMs, note}}, 1500 * kMs, 1.0f);
+    KickSettings harshLow = harsh, harshHigh = harsh;
+    harshLow.tuneSt = -12.0f;
+    harshHigh.tuneSt = 12.0f;
+    for (const auto& s : {high, harsh, harshLow, harshHigh}) {
+        const auto out = render(s, {{0}, {50 * kMs}}, 1500 * kMs, 1.0f);
         REQUIRE(std::all_of(out.begin(), out.end(), [](float x) { return std::isfinite(x); }));
-        REQUIRE(peakAbs(out) <= SafetyLimiter::kCeiling);
+        REQUIRE(peakAbs(out) <= SafetyLimiter::kCeiling * DusterEngine::kOutputGain);
     }
 }
 
 TEST_CASE("sweeping TONE mid-hit does not click", "[engine]") {
-    const auto out =
-        render(KickSettings{}, {{0, 30}}, 200 * kMs, 0.8f, 48, [](int pos, DusterEngine& engine) {
-            KickSettings s;
-            const float t = std::clamp((static_cast<float>(pos) - 100.0f * kMs) / (5.0f * kMs), 0.0f, 1.0f);
-            s.toneHz = 20000.0f + t * (1000.0f - 20000.0f); // 20 kHz to 1 kHz over 5 ms
-            engine.setSettings(s);
-        });
+    const auto out = render(KickSettings{}, {{0}}, 200 * kMs, 0.8f, 48, [](int pos, DusterEngine& engine) {
+        KickSettings s;
+        const float t = std::clamp((static_cast<float>(pos) - 100.0f * kMs) / (5.0f * kMs), 0.0f, 1.0f);
+        s.toneHz = 20000.0f + t * (1000.0f - 20000.0f); // 20 kHz to 1 kHz over 5 ms
+        engine.setSettings(s);
+    });
     REQUIRE(largestStep(out, 95 * kMs, 130 * kMs) < 0.25f);
 }
 
@@ -182,8 +184,8 @@ TEST_CASE("a new note does not cut the rumble tail", "[engine]") {
             rumble[i] = wet[i] - kickOnly[i];
         return rumble;
     };
-    const auto retriggered = rumbleOf({{0, 30}, {500 * kMs, 30}});
-    const auto untouched = rumbleOf({{0, 30}});
+    const auto retriggered = rumbleOf({{0}, {500 * kMs}});
+    const auto untouched = rumbleOf({{0}});
     // The new kick reaches the room's output 24 ms later; until then the old tail must carry on.
     const float tail = test::rms(untouched, 500 * kMs, 520 * kMs);
     REQUIRE(tail > 0.0f);
@@ -193,8 +195,8 @@ TEST_CASE("a new note does not cut the rumble tail", "[engine]") {
 TEST_CASE("the preview is the live hit", "[engine]") {
     KickSettings s = crushed05();
     s.rumbleMode = RumbleMode::Room;
-    const auto preview = renderPreviewHit(s, 30);
-    const auto live = render(s, {{0, 30}}, static_cast<int>(preview.size()), 1.0f);
+    const auto preview = renderPreviewHit(s);
+    const auto live = render(s, {{0}}, static_cast<int>(preview.size()), 1.0f);
     REQUIRE(preview == live);
 }
 
@@ -212,4 +214,11 @@ TEST_CASE("the limiter holds the ceiling and passes quiet signals", "[engine]") 
     const auto original = quiet;
     fresh.process(quiet.data(), static_cast<int>(quiet.size()));
     REQUIRE(quiet == original);
+}
+
+TEST_CASE("a full-velocity hit peaks near -12 dBFS", "[engine]") {
+    for (const auto& s : {KickSettings{}, crushed05()}) {
+        const auto out = render(s, {{0}}, 500 * kMs, 1.0f);
+        REQUIRE_THAT(test::toDb(peakAbs(out)), WithinAbs(-12.0, 1.5));
+    }
 }
