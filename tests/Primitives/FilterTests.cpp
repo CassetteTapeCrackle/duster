@@ -15,5 +15,8 @@ TEST_CASE("biquad low-pass passes lows and cuts highs", "[filter]") {
     REQUIRE_THAT(test::measureGainDb([&](float x) { return lp.process(x); }, kFs, 100.0f),
                  WithinAbs(0.0, 0.2));
     lp.reset();
+    REQUIRE_THAT(test::measureGainDb([&](float x) { return lp.process(x); }, kFs, 1000.0f),
+                 WithinAbs(-3.0, 0.2));
+    lp.reset();
     REQUIRE(test::measureGainDb([&](float x) { return lp.process(x); }, kFs, 8000.0f) < -30.0f);
 }

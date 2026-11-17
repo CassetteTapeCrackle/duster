@@ -11,9 +11,10 @@ class Crusher {
   public:
     static constexpr int kBitsOff = 16;
 
-    // 16 or more is off; otherwise steps of 1 / 2^(bits - 1).
+    // 2 to 16; 16 is off, otherwise steps of 1 / 2^(bits - 1).
     void setBits(int bits) noexcept {
-        steps_ = bits >= kBitsOff ? 0.0f : std::exp2(static_cast<float>(bits - 1));
+        bits = std::clamp(bits, 2, kBitsOff);
+        steps_ = bits == kBitsOff ? 0.0f : std::exp2(static_cast<float>(bits - 1));
     }
     // 1 is off; n holds every n-th sample for n samples.
     void setHoldFactor(int holdFactor) noexcept { holdFactor_ = std::max(1, holdFactor); }

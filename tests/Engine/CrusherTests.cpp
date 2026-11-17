@@ -64,9 +64,19 @@ TEST_CASE("8 bits snaps every output to a multiple of 1/128", "[crusher]") {
     Crusher crusher;
     crusher.setBits(8);
     for (const float x : test::sine(48000.0, 46.9, 0.1, 0.9f)) {
-        const float steps = crusher.process(x) * 128.0f;
-        REQUIRE(steps == std::round(steps));
+        const float y = crusher.process(x);
+        REQUIRE(y * 128.0f == std::round(y * 128.0f));
+        REQUIRE(std::abs(y - x) <= 1.0f / 256.0f + 1e-6f); // the nearest step, not a coarser grid
     }
+}
+
+TEST_CASE("2 bits rounds to steps of 0.5", "[crusher]") {
+    Crusher crusher;
+    crusher.setBits(2);
+    REQUIRE(crusher.process(0.3f) == 0.5f);
+    REQUIRE(crusher.process(0.2f) == 0.0f);
+    REQUIRE(crusher.process(1.0f) == 1.0f);
+    REQUIRE(crusher.process(-0.8f) == -1.0f);
 }
 
 TEST_CASE("16 bits and hold 1 pass the input through unchanged", "[crusher]") {
