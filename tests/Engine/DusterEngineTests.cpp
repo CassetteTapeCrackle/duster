@@ -106,7 +106,11 @@ TEST_CASE("a retrigger crossfades without a click", "[engine]") {
     REQUIRE(worst < 1e-5f);
 
     const auto close = render(init, {{0, 30}, {5 * kMs, 30}, {10 * kMs, 30}}, 50 * kMs, 0.8f);
-    REQUIRE(largestStep(close, 0, close.size()) < 0.25f);
+    REQUIRE(largestStep(close, 0, close.size()) < 0.1f);
+
+    // Three notes inside one 3 ms fade: no voice may be cut while it is still loud.
+    const auto roll = render(init, {{0, 30}, {1 * kMs, 30}, {2 * kMs, 30}}, 50 * kMs, 0.8f);
+    REQUIRE(largestStep(roll, 0, roll.size()) < 0.1f);
 }
 
 TEST_CASE("two notes before the same sample play once, the later one", "[engine]") {

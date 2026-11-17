@@ -9,8 +9,9 @@
 
 namespace duster {
 
-// The whole instrument at kEngineRate, mono: two voice slots (a retrigger crossfades the old hit out
-// over 3 ms), the rumble bus fed by the kick, then the safety limiter.
+// The whole instrument at kEngineRate, mono: three voice slots (a retrigger crossfades the old hit out
+// over 3 ms, and a fast roll can have two fading at once), the rumble bus fed by the kick, then the
+// safety limiter.
 class DusterEngine {
   public:
     void prepare();                                          // allocates; message thread
@@ -34,7 +35,7 @@ class DusterEngine {
 
     void startPendingNote() noexcept;
 
-    std::array<KickVoice, 2> voices_;
+    std::array<KickVoice, 3> voices_;
     RumbleBus rumble_;
     SafetyLimiter limiter_;
     KickSettings settings_;

@@ -50,17 +50,17 @@ void DusterEngine::setSettings(const KickSettings& settings) noexcept {
 void DusterEngine::noteOn(int midiNote, float velocity01) noexcept {
     hasPendingNote_ = true; // a second note before the next sample replaces the first
     pendingNote_ = midiNote;
-    pendingVelocity_ = velocity01;
+    pendingVelocity_ = std::clamp(velocity01, 0.0f, 1.0f);
 }
 
 void DusterEngine::startPendingNote() noexcept {
     hasPendingNote_ = false;
-    // Prefer a free slot, then the one already fading out; never cut a voice at full level.
+    // A free slot, else the quietest voice (the one furthest into its fade).
     auto slot = std::find_if(voices_.begin(), voices_.end(), [](const KickVoice& v) { return !v.active(); });
     if (slot == voices_.end())
-        slot = std::find_if(voices_.begin(), voices_.end(), [](const KickVoice& v) { return v.fading(); });
-    if (slot == voices_.end())
-        slot = voices_.begin();
+        slot = std::min_element(voices_.begin(), voices_.end(), [](const KickVoice& a, const KickVoice& b) {
+            return a.envelope() < b.envelope();
+        });
     for (auto& voice : voices_)
         voice.fadeOut();
     slot->start(settings_, pendingNote_, pendingVelocity_);
