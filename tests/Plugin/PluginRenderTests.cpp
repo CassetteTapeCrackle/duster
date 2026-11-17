@@ -32,8 +32,8 @@ struct HostNote {
 
 // Renders `seconds` of the left channel in host blocks, sending note 30 events at their samples.
 std::vector<float> render(DusterProcessor& p, double rate, int block, double seconds,
-                          const std::vector<HostNote>& notes) {
-    p.prepareToPlay(rate, block);
+                          const std::vector<HostNote>& notes, int preparedBlock = 0) {
+    p.prepareToPlay(rate, preparedBlock > 0 ? preparedBlock : block);
     const auto total = static_cast<int>(rate * seconds);
     std::vector<float> out(static_cast<std::size_t>(total));
     juce::AudioBuffer<float> buffer(2, block);
@@ -54,10 +54,11 @@ std::vector<float> render(DusterProcessor& p, double rate, int block, double sec
     return out;
 }
 
-std::vector<float> render05(double rate, int block, double seconds, const std::vector<HostNote>& notes) {
+std::vector<float> render05(double rate, int block, double seconds, const std::vector<HostNote>& notes,
+                            int preparedBlock = 0) {
     DusterProcessor p;
     p.setCurrentProgram(k05Program);
-    return render(p, rate, block, seconds, notes);
+    return render(p, rate, block, seconds, notes, preparedBlock);
 }
 
 std::size_t onset(const std::vector<float>& x) {
@@ -93,6 +94,15 @@ TEST_CASE("the block size never changes the output", "[plugin]") {
         INFO("block " << block);
         REQUIRE(maxDifference(render05(44100.0, block, 0.5, {{0, true}}), reference) < 1e-5f);
     }
+    // Some hosts send more than they announced in prepareToPlay.
+    REQUIRE(maxDifference(render05(44100.0, 512, 0.5, {{0, true}}, 64), reference) < 1e-5f);
+}
+
+TEST_CASE("two note-ons on the same sample play one hit", "[plugin]") {
+    Juce juce;
+    const auto once = render05(44100.0, 512, 0.3, {{100, true}});
+    const auto twice = render05(44100.0, 512, 0.3, {{100, true}, {100, true}});
+    REQUIRE(once == twice);
 }
 
 TEST_CASE("a note lands on its sample", "[plugin]") {
@@ -121,11 +131,16 @@ TEST_CASE("the reported latency is where the hit appears", "[plugin]") {
     const auto out48 = render(at48, 48000.0, 512, 0.2, {{0, true}});
     REQUIRE(at48.getLatencySamples() == 0);
 
-    DusterProcessor at44;
-    at44.setCurrentProgram(k05Program);
-    const auto out44 = render(at44, 44100.0, 512, 0.2, {{0, true}});
-    const double compensated = static_cast<double>(onset(out44)) - at44.getLatencySamples();
-    REQUIRE_THAT(compensated, WithinAbs(static_cast<double>(onset(out48)) * 44100.0 / 48000.0, 1.5));
+    for (const double rate : {22050.0, 44100.0, 88200.0, 192000.0}) {
+        INFO("host rate " << rate);
+        DusterProcessor host;
+        host.setCurrentProgram(k05Program);
+        const auto out = render(host, rate, 512, 0.2, {{0, true}});
+        const double compensated = static_cast<double>(onset(out)) - host.getLatencySamples();
+        // Within one engine sample (the onset detector's resolution), plus half a host sample.
+        const double tolerance = rate / 48000.0 + 0.5;
+        REQUIRE_THAT(compensated, WithinAbs(static_cast<double>(onset(out48)) * rate / 48000.0, tolerance));
+    }
 }
 
 TEST_CASE("state round-trips every knob and the program", "[plugin]") {

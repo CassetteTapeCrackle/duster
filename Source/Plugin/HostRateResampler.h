@@ -47,8 +47,8 @@ class HostRateResampler {
     int latencyHostSamples() const noexcept { return latency_; }
 
   private:
-    static constexpr int kLead =
-        8; // engine samples the FIFO runs ahead; more than one host chunk leaves over
+    // Engine samples the FIFO runs ahead: more than a host chunk ever leaves unread (3 at most).
+    static constexpr int kLead = 8;
 
     // Makes at least `unread` engine samples available in the FIFO.
     template <class Render> void fill(int unread, Render&& render) noexcept {
