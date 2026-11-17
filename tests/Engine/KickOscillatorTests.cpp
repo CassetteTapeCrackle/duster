@@ -55,6 +55,8 @@ TEST_CASE("the first swing goes negative", "[sweep]") {
 TEST_CASE("a note far above Nyquist stays finite and clamps at 20 kHz", "[sweep]") {
     KickOscillator osc;
     osc.start(12543.9f /* MIDI 127 */, 60.0f, 1.0f);
+    osc.next();
+    REQUIRE(osc.currentHz() == 20000.0f);
     for (int i = 0; i < samplesIn(500.0f); ++i) {
         REQUIRE(std::isfinite(osc.next()));
         REQUIRE(osc.currentHz() <= 20000.0f);
@@ -71,4 +73,11 @@ TEST_CASE("an upward zero crossing is flagged once per cycle", "[sweep]") {
     }
     REQUIRE(crossings >= 99);
     REQUIRE(crossings <= 101);
+}
+
+TEST_CASE("the sweep never returns a subnormal on long notes", "[sweep]") {
+    for (float t = 0.0f; t <= 1500.0f; t += 0.5f) {
+        INFO("at " << t << " ms");
+        REQUIRE(std::fpclassify(sweepSemitones(t, 60.0f, 1.0f)) != FP_SUBNORMAL);
+    }
 }

@@ -13,11 +13,14 @@ constexpr float kFastShare = 0.85f;
 constexpr float kSlowShare = 0.15f;
 constexpr float kSlowSnapRatio = 5.0f;
 constexpr float kMaxHz = 20000.0f;
+constexpr float kMinExponent = -60.0f;
 } // namespace
 
 float sweepSemitones(float tMs, float sweepSt, float snapMs) noexcept {
-    return sweepSt *
-           (kFastShare * std::exp2(-tMs / snapMs) + kSlowShare * std::exp2(-tMs / (kSlowSnapRatio * snapMs)));
+    // Exponents stop at -60 (2^-60 st is inaudible) so long notes never hit slow subnormals.
+    const float fast = std::exp2(std::max(-tMs / snapMs, kMinExponent));
+    const float slow = std::exp2(std::max(-tMs / (kSlowSnapRatio * snapMs), kMinExponent));
+    return sweepSt * (kFastShare * fast + kSlowShare * slow);
 }
 
 void KickOscillator::start(float noteHz, float sweepSt, float snapMs) noexcept {
