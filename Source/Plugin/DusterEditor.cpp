@@ -81,6 +81,14 @@ std::optional<juce::WebBrowserComponent::Resource> DusterEditor::serveWebResourc
     return std::nullopt;
 }
 
+juce::Point<int> DusterEditor::fittedSize(int requestedWidth, int requestedHeight) {
+    const double scale = juce::jlimit(1.0, static_cast<double>(kMaxWidth) / kMinWidth,
+                                      std::max(static_cast<double>(requestedWidth) / kMinWidth,
+                                               static_cast<double>(requestedHeight) / kMinHeight));
+    return {static_cast<int>(std::lround(kMinWidth * scale)),
+            static_cast<int>(std::lround(kMinHeight * scale))};
+}
+
 juce::StringArray DusterEditor::webResourcePaths() {
     juce::StringArray paths;
     for (const auto& file : duster::web::kWebFiles)
@@ -149,9 +157,11 @@ juce::WebBrowserComponent::Options DusterEditor::browserOptions() {
                             [this](const juce::Array<juce::var>& args, auto complete) {
                                 // The page draws its own resize grip: the native corner resizer would
                                 // sit under the WebView and never receive the mouse.
-                                if (args.size() >= 2)
-                                    setSize(juce::jlimit(kMinWidth, kMaxWidth, static_cast<int>(args[0])),
-                                            juce::jlimit(kMinHeight, kMaxHeight, static_cast<int>(args[1])));
+                                if (args.size() >= 2) {
+                                    const auto size =
+                                        fittedSize(static_cast<int>(args[0]), static_cast<int>(args[1]));
+                                    setSize(size.x, size.y);
+                                }
                                 complete(juce::var());
                             })
         .withInitialisationData("sizeLimits",
@@ -174,6 +184,8 @@ DusterEditor::DusterEditor(DusterProcessor& owner)
     browser_.goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
     setResizable(true, false); // host edges resize; the page's grip calls resizeTo
     setResizeLimits(kMinWidth, kMinHeight, kMaxWidth, kMaxHeight);
+    if (auto* constrainer = getConstrainer()) // host edges keep the layout's proportions too
+        constrainer->setFixedAspectRatio(static_cast<double>(kMinWidth) / kMinHeight);
     setSize(kMinWidth, kMinHeight);
     startTimerHz(30);
 }

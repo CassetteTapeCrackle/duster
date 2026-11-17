@@ -27,6 +27,9 @@ class DusterEditor final : public juce::AudioProcessorEditor,
 
     // Maps a request path ("/", "/main.js", "/juce/index.js") to an embedded file. Public for tests.
     static std::optional<juce::WebBrowserComponent::Resource> serveWebResource(const juce::String& url);
+    // The window size for a requested one: the larger of the two scale factors, in the window's own
+    // proportions, inside the size limits. Public for tests.
+    static juce::Point<int> fittedSize(int requestedWidth, int requestedHeight);
     // Every embedded file's request path, for tests.
     static juce::StringArray webResourcePaths();
     // One hit for the display: the lowest and highest sample of each of 400 columns, the pitch in

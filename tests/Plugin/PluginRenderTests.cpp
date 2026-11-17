@@ -275,3 +275,19 @@ TEST_CASE("every MIDI note plays the same kick", "[plugin]") {
         REQUIRE(renderNote(note) == fSharp0);
     }
 }
+
+TEST_CASE("the window only resizes in its own proportions", "[plugin]") {
+    Juce juce;
+    const auto ratio = 560.0 / 340.0;
+    for (const auto& [w, h] : {std::pair{900, 340}, std::pair{560, 600}, std::pair{700, 500},
+                               std::pair{5000, 5000}, std::pair{10, 10}}) {
+        INFO(w << " x " << h);
+        const auto size = DusterEditor::fittedSize(w, h);
+        REQUIRE(std::abs(static_cast<double>(size.x) / size.y - ratio) < 0.01);
+        REQUIRE(size.x >= 560);
+        REQUIRE(size.x <= 1120);
+    }
+    REQUIRE(DusterEditor::fittedSize(840, 510) == juce::Point<int>(840, 510));
+    REQUIRE(DusterEditor::fittedSize(900, 340).x == 900); // dragging wider grows the whole window
+    REQUIRE(DusterEditor::fittedSize(560, 680).y == 680); // and so does dragging taller
+}
