@@ -95,6 +95,8 @@ if(DUSTER_BUILD_TESTS)
     add_executable(DusterTests
         tests/Engine/EngineRateTests.cpp
         tests/Engine/KickOscillatorTests.cpp
+        tests/Engine/AmpShapeTests.cpp
+        tests/Engine/DriveTests.cpp
     )
     target_include_directories(DusterTests PRIVATE tests)
     target_link_libraries(DusterTests PRIVATE DusterCore Catch2::Catch2WithMain)
