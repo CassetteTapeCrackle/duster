@@ -14,6 +14,13 @@ TEST_CASE("the amp shape is Kick_05's level curve", "[amp]") {
     REQUIRE(ampShape(500.0f, 390.0f) == 0.0f);
 }
 
+TEST_CASE("the amp shape holds, sags and releases in straight lines", "[amp]") {
+    REQUIRE(ampShape(50.0f, 390.0f) == 1.0f);
+    REQUIRE_THAT(ampShape(220.0f, 390.0f), WithinAbs(0.85, 1e-3));
+    REQUIRE_THAT(ampShape(365.0f, 390.0f), WithinAbs(0.35, 1e-3));
+    REQUIRE_THAT(ampShape(40.0f, 80.0f), WithinAbs(0.8, 1e-3)); // no room to sag: 1 to 0 over 30-80 ms
+}
+
 TEST_CASE("the amp shape never rises after the attack", "[amp]") {
     for (const float length : {80.0f, 390.0f, 1500.0f}) {
         INFO("length " << length);
