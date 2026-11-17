@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { connect, sanitizePreview } from "../../Source/Web/bridge.js";
+import { connect, sanitizePresets, sanitizePreview } from "../../Source/Web/bridge.js";
 import { PARAMS, PRESETS } from "../../Source/Web/format.js";
 import { previewOf } from "../../Source/Web/mock.js";
 
@@ -41,4 +41,9 @@ test("a malformed preview from the backend never reaches the renderer", () => {
   assert.equal(p.spanMs, 1);
   assert.equal(p.noteHz, 8);
   assert.deepEqual(sanitizePreview(null).lows, []);
+});
+
+test("a malformed preset list from the backend is cleaned", () => {
+  assert.deepEqual(sanitizePresets({ names: ["INIT", 3, null, "05 CRUSHED"], current: -2 }), { names: ["INIT", "05 CRUSHED"], current: 0 });
+  assert.deepEqual(sanitizePresets(undefined), { names: [], current: 0 });
 });

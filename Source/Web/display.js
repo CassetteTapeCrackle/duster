@@ -41,10 +41,19 @@ export function makeKickDisplay(host) {
     B.line(0, mid, W - 1, mid, 0.3);
     if (preview && preview.lows.length) {
       const span = preview.spanMs, cols = preview.lows.length, col = (c) => Math.min(cols - 1, Math.floor((c * cols) / W));
+      // a pixel narrower than a preview column still shows every column it covers
+      const range = (c) => {
+        let low = Infinity, high = -Infinity;
+        for (let k = col(c); k <= Math.max(col(c), Math.min(cols - 1, Math.ceil(((c + 1) * cols) / W) - 1)); k++) {
+          low = Math.min(low, preview.lows[k]);
+          high = Math.max(high, preview.highs[k]);
+        }
+        return [low, high];
+      };
       const grid = span > 1000 ? 500 : 100; // faint 100 ms columns
       for (let ms = grid; ms < span; ms += grid) B.line((ms * W) / span, 0, (ms * W) / span, H - 1, 0.3);
       for (let c = 0; c < W; c++) {
-        const { top, bottom } = waveColumn(preview.lows[col(c)], preview.highs[col(c)], H);
+        const { top, bottom } = waveColumn(...range(c), H);
         for (let y = top; y <= bottom; y++) B.put(c, y, 0.5);
         B.set(c, top, 1);
         B.set(c, bottom, 1);

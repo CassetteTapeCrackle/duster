@@ -21,6 +21,10 @@ export function sanitizePreview(p) {
 }
 
 export const sanitizeProgram = (p) => (Number.isInteger(p) && p >= 0 ? p : 0);
+export const sanitizePresets = (p) => ({
+  names: Array.isArray(p?.names) ? p.names.filter((n) => typeof n === "string") : [],
+  current: sanitizeProgram(p?.current),
+});
 const sanitizeChoice = (i, count) => (Number.isInteger(i) && i >= 0 && i < count ? i : 0);
 
 // options.juceModule lets tests pass JUCE's frontend module explicitly.
@@ -73,7 +77,7 @@ async function connectJuce(juceModule) {
     onProgram: (cb) => backend.addEventListener("program", (e) => cb(sanitizeProgram(e?.program))),
     onHit: (cb) => backend.addEventListener("hit", () => cb()),
     onPreview: (cb) => backend.addEventListener("preview", (e) => cb(sanitizePreview(e))),
-    presets: () => getPresets(),
+    presets: async () => sanitizePresets(await getPresets()),
     setPreset: async (i) => sanitizeProgram(await setPreset(i)),
     preview: async () => sanitizePreview(await getPreview()),
     audition: () => audition(),

@@ -204,7 +204,8 @@ void DusterEditor::timerCallback() {
         browser_.emitEventIfBrowserIsVisible("hit", juce::var());
     }
     const bool changed = previewStale_.load() || processor_.lastNote() != previewNote_;
-    if (changed && juce::Time::getMillisecondCounter() - lastPreviewMs_ >= kPreviewEveryMs) {
+    // Hidden windows skip the render; the stale flag catches the display up when it shows again.
+    if (changed && isShowing() && juce::Time::getMillisecondCounter() - lastPreviewMs_ >= kPreviewEveryMs) {
         refreshPreview();
         browser_.emitEventIfBrowserIsVisible("preview", preview_);
     }
