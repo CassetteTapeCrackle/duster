@@ -60,7 +60,10 @@ if(DUSTER_BUILD_PLUGIN)
     )
 
     target_sources(Duster PRIVATE
+        Source/Plugin/DusterParams.cpp
+        Source/Plugin/DusterPresets.cpp
         Source/Plugin/DusterProcessor.cpp
+        Source/Plugin/HostRateResampler.cpp
     )
 
     target_compile_definitions(Duster PUBLIC
@@ -117,7 +120,7 @@ if(DUSTER_BUILD_TESTS)
 
     # Tests that drive the shipped plugin wrapper (needs JUCE, so only when the plugin is built).
     if(DUSTER_BUILD_PLUGIN)
-        add_executable(DusterPluginTests tests/Plugin/PluginSmokeTests.cpp)
+        add_executable(DusterPluginTests tests/Plugin/PluginSmokeTests.cpp tests/Plugin/PluginRenderTests.cpp)
         target_include_directories(DusterPluginTests PRIVATE tests)
         target_link_libraries(DusterPluginTests PRIVATE
             Duster DusterCore Catch2::Catch2WithMain
