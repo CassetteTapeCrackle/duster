@@ -30,6 +30,10 @@ set(DUSTER_CORE_SOURCES
     Source/Engine/KickOscillator.cpp
     Source/Engine/RingResonator.cpp
     Source/Engine/RumbleBus.cpp
+    Source/Engine/SafetyLimiter.cpp
+    Source/Engine/KickVoice.cpp
+    Source/Engine/DusterEngine.cpp
+    Source/Engine/PreviewRender.cpp
     Source/Primitives/Biquad.cpp
 )
 add_library(DusterCore STATIC ${DUSTER_CORE_SOURCES})
@@ -103,6 +107,7 @@ if(DUSTER_BUILD_TESTS)
         tests/Engine/CrusherTests.cpp
         tests/Engine/RingResonatorTests.cpp
         tests/Engine/RumbleBusTests.cpp
+        tests/Engine/DusterEngineTests.cpp
         tests/Primitives/FilterTests.cpp
     )
     target_include_directories(DusterTests PRIVATE tests)
