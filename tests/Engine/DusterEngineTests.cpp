@@ -27,7 +27,7 @@ KickSettings crushed05() {
     s.drive01 = 0.22f;
     s.bits = 8;
     s.holdFactor = 5;
-    s.toneHz = 11500.0f;
+    s.toneHz = 6365.0f;
     return s;
 }
 

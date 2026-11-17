@@ -48,11 +48,13 @@ bool writeWav(const juce::File& file, const std::vector<float>& samples, double 
     juce::WavAudioFormat wav;
     const auto options =
         juce::AudioFormatWriterOptions{}.withSampleRate(rate).withNumChannels(1).withBitsPerSample(24);
-    const auto writer = wav.createWriterFor(stream, options); // takes the stream on success
+    auto writer = wav.createWriterFor(stream, options); // takes the stream on success
     if (writer == nullptr)
         return false;
     const float* channels[] = {samples.data()};
-    return writer->writeFromFloatArrays(channels, 1, static_cast<int>(samples.size()));
+    const bool written = writer->writeFromFloatArrays(channels, 1, static_cast<int>(samples.size()));
+    writer.reset(); // flushes the header before success is reported
+    return written;
 }
 
 int programNamed(const std::string& name) {

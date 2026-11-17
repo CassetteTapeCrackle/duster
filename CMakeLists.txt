@@ -120,6 +120,7 @@ if(DUSTER_BUILD_TESTS)
         tests/Engine/RingResonatorTests.cpp
         tests/Engine/RumbleBusTests.cpp
         tests/Engine/DusterEngineTests.cpp
+        tests/Engine/ToneTests.cpp
         tests/Primitives/FilterTests.cpp
     )
     target_include_directories(DusterTests PRIVATE tests)

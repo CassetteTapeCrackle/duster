@@ -30,7 +30,7 @@ constexpr std::array kPresets = {
     preset("INIT", 0.0f, 36.0f, 8.0f, 400.0f, 0.0f, 16.0f, 0.0f, 20000.0f, 0.0f, 900.0f, 0.0f, 50.0f, 600.0f,
            5.0f),
     // Kick_05 from the Mathys Lenne pack: 8 bits held for 5 engine samples (9.6 kHz), played on F#0.
-    preset("05 CRUSHED", 0.2f, 56.0f, 3.7f, 390.0f, 22.0f, 8.0f, 4.0f, 11500.0f, 0.0f, 900.0f, 0.0f, 50.0f,
+    preset("05 CRUSHED", 0.2f, 56.0f, 3.7f, 390.0f, 22.0f, 8.0f, 4.0f, 6365.0f, 0.0f, 900.0f, 0.0f, 50.0f,
            600.0f, 5.0f),
 };
 } // namespace

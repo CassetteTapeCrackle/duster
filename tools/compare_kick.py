@@ -51,6 +51,8 @@ def pitch_at(x, ms):
 
 def metrics(x):
     """Name -> (value, kind): kind is 'level' (dB), 'attack' (dB, best effort) or 'pitch' (Hz)."""
+    if len(x) < int(.40 * SR) or not np.any(x):
+        sys.exit("compare_kick: each file needs at least 400 ms of sound")
     x = x[:int(.40 * SR)]
     tail = x[int(.10 * SR):int(.36 * SR)]
     n = 1 << 18
