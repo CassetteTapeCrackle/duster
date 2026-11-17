@@ -22,6 +22,23 @@ inline double toDb(double ratio) {
     return 20.0 * std::log10(ratio);
 }
 
+inline float rms(const std::vector<float>& v, std::size_t from, std::size_t to) {
+    double sum = 0.0;
+    for (std::size_t i = from; i < to; ++i)
+        sum += static_cast<double>(v[i]) * v[i];
+    return static_cast<float>(std::sqrt(sum / static_cast<double>(std::max<std::size_t>(1, to - from))));
+}
+
+// Steady-state gain in dB of a per-sample process(x) at one frequency.
+template <typename Process> float measureGainDb(Process&& process, float fs, float hz, float amp = 0.1f) {
+    const auto in = sine(fs, hz, 1.0, amp);
+    std::vector<float> out(in.size());
+    for (std::size_t i = 0; i < in.size(); ++i)
+        out[i] = process(in[i]);
+    const std::size_t half = in.size() / 2;
+    return static_cast<float>(toDb(rms(out, half, in.size()) / rms(in, half, in.size())));
+}
+
 // Magnitudes of a real signal's spectrum, bins 0 to N/2.
 struct Spectrum {
     std::vector<double> magnitude;

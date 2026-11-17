@@ -28,6 +28,7 @@ include(cmake/CPM.cmake)
 # ---- Core: pure C++ DSP and engine at 48 kHz, no JUCE. Used by the plugin and the tests. ----
 set(DUSTER_CORE_SOURCES
     Source/Engine/KickOscillator.cpp
+    Source/Primitives/Biquad.cpp
 )
 add_library(DusterCore STATIC ${DUSTER_CORE_SOURCES})
 target_include_directories(DusterCore PUBLIC Source)
@@ -97,6 +98,8 @@ if(DUSTER_BUILD_TESTS)
         tests/Engine/KickOscillatorTests.cpp
         tests/Engine/AmpShapeTests.cpp
         tests/Engine/DriveTests.cpp
+        tests/Engine/CrusherTests.cpp
+        tests/Primitives/FilterTests.cpp
     )
     target_include_directories(DusterTests PRIVATE tests)
     target_link_libraries(DusterTests PRIVATE DusterCore Catch2::Catch2WithMain)
