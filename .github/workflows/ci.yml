@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/.cpm-cache
+
+jobs:
+  # Cheap checks on Linux first (macOS minutes cost 10x on private repos).
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: clang-format (pinned)
+        run: |
+          pipx run clang-format==21.1.2 --dry-run --Werror $(git ls-files '*.cpp' '*.h')
+      - name: shellcheck
+        run: shellcheck packaging/*.sh
+
+  test:
+    needs: lint
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: .cpm-cache
+          key: cpm-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Ninja
+        run: brew install ninja
+      - name: Configure
+        run: cmake --preset default -DDUSTER_WERROR=ON
+      - name: Build
+        run: cmake --build --preset default
+      - name: Test
+        run: ctest --preset default
+
+  asan:
+    needs: lint
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: .cpm-cache
+          key: cpm-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+      - name: Install Ninja
+        run: brew install ninja
+      - name: Configure
+        run: cmake --preset asan -DDUSTER_WERROR=ON
+      - name: Build
+        run: cmake --build --preset asan
+      - name: Test (ASan + UBSan)
+        run: ctest --preset asan

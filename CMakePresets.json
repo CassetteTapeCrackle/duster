@@ -1,0 +1,49 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Debug plugin + tests",
+      "generator": "Ninja",
+      "environment": { "CPM_SOURCE_CACHE": "$env{HOME}/.cache/CPM" },
+      "binaryDir": "${sourceDir}/build/default",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "DUSTER_BUILD_PLUGIN": "ON", "DUSTER_BUILD_TESTS": "ON", "DUSTER_SANITIZE": "OFF" }
+    },
+    {
+      "name": "asan",
+      "displayName": "Tests only, ASan + UBSan",
+      "generator": "Ninja",
+      "environment": { "CPM_SOURCE_CACHE": "$env{HOME}/.cache/CPM" },
+      "binaryDir": "${sourceDir}/build/asan",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "DUSTER_BUILD_PLUGIN": "OFF", "DUSTER_BUILD_TESTS": "ON", "DUSTER_SANITIZE": "ON" }
+    },
+    {
+      "name": "release",
+      "displayName": "Release plugin + tests + plugin validation",
+      "generator": "Ninja",
+      "environment": { "CPM_SOURCE_CACHE": "$env{HOME}/.cache/CPM" },
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "DUSTER_INSTALL_PLUGIN": "ON", "DUSTER_BUILD_PLUGIN": "ON", "DUSTER_BUILD_TESTS": "ON", "DUSTER_SANITIZE": "OFF" }
+    },
+    {
+      "name": "dist",
+      "displayName": "Universal (arm64 + x86_64) release for packaging",
+      "generator": "Ninja",
+      "environment": { "CPM_SOURCE_CACHE": "$env{HOME}/.cache/CPM" },
+      "binaryDir": "${sourceDir}/build/dist",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64", "DUSTER_INSTALL_PLUGIN": "OFF", "DUSTER_BUILD_PLUGIN": "ON", "DUSTER_BUILD_TESTS": "ON", "DUSTER_SANITIZE": "OFF" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "default", "configurePreset": "default" },
+    { "name": "asan", "configurePreset": "asan" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "dist", "configurePreset": "dist" }
+  ],
+  "testPresets": [
+    { "name": "default", "configurePreset": "default", "output": { "outputOnFailure": true }, "filter": { "exclude": { "label": "pluginval" } } },
+    { "name": "asan", "configurePreset": "asan", "output": { "outputOnFailure": true } },
+    { "name": "release", "configurePreset": "release", "output": { "outputOnFailure": true } },
+    { "name": "dist", "configurePreset": "dist", "output": { "outputOnFailure": true } }
+  ]
+}

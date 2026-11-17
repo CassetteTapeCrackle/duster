@@ -1,0 +1,72 @@
+# ---- Private docs (kept local, never pushed) ----
+docs/specs/
+docs/superpowers/
+.handoff/
+
+# ---- Agent worktrees and plan workspaces ----
+.claude/worktrees/
+.superpowers/
+
+# ---- Build output ----
+build/
+build-*/
+cmake-build-*/
+out/
+
+# ---- macOS ----
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# ---- Xcode per-user cruft ----
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# ---- LSP / clangd cache ----
+.cache/
+compile_commands.json
+
+# ---- IDE / editor ----
+.vscode/
+.idea/
+*.swp
+*~
+
+# ---- JUCE / plugin build noise ----
+JuceLibraryCode/
+*.o
+*.obj
+*.component
+*.vst3
+*.aaxplugin
+*.app
+*.dSYM/
+
+# ---- WebView UI tooling (if a bundler gets added later) ----
+node_modules/
+dist/
+.parcel-cache/
+.vite/
+
+# ---- Test / render artifacts ----
+*.wav.tmp
+*.wav
+__pycache__/
+renders/
+pluginval-logs/
+
+# ---- Local secrets / env ----
+.env
+.env.local

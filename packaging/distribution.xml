@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Duster @VERSION@</title>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <options customize="allow" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+    <domains enable_localSystem="true"/>
+    <os-version min="12.0"/>
+    <choices-outline>
+        <line choice="au"/>
+        <line choice="vst3"/>
+    </choices-outline>
+    <choice id="au" title="Audio Unit" description="Duster.component for Logic Pro, GarageBand and other AU hosts.">
+        <pkg-ref id="com.LVST.Duster.pkg.au"/>
+    </choice>
+    <choice id="vst3" title="VST3" description="Duster.vst3 for Ableton Live, Reaper, Cubase, Bitwig and other VST3 hosts.">
+        <pkg-ref id="com.LVST.Duster.pkg.vst3"/>
+    </choice>
+    <pkg-ref id="com.LVST.Duster.pkg.au" version="@VERSION@">Duster-au.pkg</pkg-ref>
+    <pkg-ref id="com.LVST.Duster.pkg.vst3" version="@VERSION@">Duster-vst3.pkg</pkg-ref>
+</installer-gui-script>

@@ -1,0 +1,113 @@
+name: Release
+
+# Push a tag vX.Y.Z (matching project(VERSION) in CMakeLists.txt) to build the universal
+# installer and attach it to a draft GitHub release. Run it by hand to get the pkg as a
+# workflow artifact without a release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/.cpm-cache
+  PLUGINVAL_VERSION: v1.0.4
+
+jobs:
+  package:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: |
+          version="$(sed -nE 's/^project\(Duster VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match project version $version"
+            exit 1
+          fi
+
+      - uses: actions/cache@v4
+        with:
+          path: .cpm-cache
+          key: cpm-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Ninja and pluginval
+        run: |
+          brew install ninja
+          curl -fsSL -o pluginval.zip \
+            "https://github.com/Tracktion/pluginval/releases/download/$PLUGINVAL_VERSION/pluginval_macOS.zip"
+          unzip -q pluginval.zip -d "$RUNNER_TEMP"
+
+      - name: Configure (universal)
+        run: cmake --preset dist -DPLUGINVAL_PATH="$RUNNER_TEMP/pluginval.app/Contents/MacOS/pluginval"
+      - name: Build
+        run: cmake --build --preset dist
+      - name: Test + pluginval
+        run: ctest --preset dist
+
+      - name: auval
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R build/dist/Duster_artefacts/Release/AU/Duster.component ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          auval -v aumu Dstr Lvst
+
+      # Signing turns on when the Apple secrets exist; without them the pkg is unsigned.
+      - name: Import signing certificates
+        id: signing
+        env:
+          CERTS_P12_BASE64: ${{ secrets.APPLE_CERTS_P12_BASE64 }}
+          CERTS_P12_PASSWORD: ${{ secrets.APPLE_CERTS_P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          if [[ -z "$CERTS_P12_BASE64" ]]; then
+            echo "No signing secrets: building an unsigned pkg."
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password="$(uuidgen)"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          echo "$CERTS_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/certs.p12"
+          security import "$RUNNER_TEMP/certs.p12" -k "$keychain" -P "$CERTS_P12_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/productbuild
+          rm "$RUNNER_TEMP/certs.p12"
+          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          app_id="$(security find-identity -v -p codesigning "$keychain" | sed -nE 's/.*"(Developer ID Application: [^"]+)".*/\1/p' | head -1)"
+          installer_id="$(security find-identity -v "$keychain" | sed -nE 's/.*"(Developer ID Installer: [^"]+)".*/\1/p' | head -1)"
+          echo "DUSTER_SIGN_APP=$app_id" >> "$GITHUB_ENV"
+          echo "DUSTER_SIGN_INSTALLER=$installer_id" >> "$GITHUB_ENV"
+          if [[ -n "$APPLE_ID" ]]; then
+            xcrun notarytool store-credentials duster-notary --apple-id "$APPLE_ID" \
+              --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD" --keychain "$keychain"
+            echo "DUSTER_NOTARY_PROFILE=duster-notary" >> "$GITHUB_ENV"
+            echo "DUSTER_NOTARY_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build installer
+        run: packaging/build-pkg.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Duster-${{ steps.version.outputs.version }}-macOS
+          path: build/dist/pkg/*
+
+      - name: Draft GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/dist/pkg/* --draft --verify-tag \
+            --title "Duster $GITHUB_REF_NAME" --generate-notes
