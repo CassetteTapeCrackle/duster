@@ -68,13 +68,14 @@ class Measure:
     worst: float
     limit: float
     detail: str
+    mean: float = 0.0          # mean error over limit across the measure's points: its share of the score
 
 
 @dataclass
 class Report:
     verdict: str              # "PASS" | "CLOSE" | "MISS"
     measures: list
-    score: float
+    score: float              # each measure's mean error over its limit, averaged over the measures
 
     def misses(self):
         """Each failed measure, phrased as a difference from the reference, never its values."""
@@ -387,8 +388,10 @@ def compare(render, ref):
     measures, points = [], []
 
     def add(name, worst, limit, detail, ratios):
-        measures.append(Measure(name, worst <= limit, worst <= 2 * limit, float(worst), limit, detail))
-        points.extend(np.atleast_1d(ratios).tolist())
+        ratios = np.atleast_1d(ratios)
+        mean = float(np.mean(ratios)) if len(ratios) else 0.0
+        measures.append(Measure(name, worst <= limit, worst <= 2 * limit, float(worst), limit, detail, mean))
+        points.append(mean)
 
     # Energy map: the worst region's 90th percentile of error over limit.
     regions = _map_ratios(target, analysis)
