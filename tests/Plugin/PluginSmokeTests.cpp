@@ -22,10 +22,9 @@ TEST_CASE("plugin is a MIDI instrument with stereo out", "[plugin]") {
     juce::AudioBuffer<float> buffer(2, kBlock);
     buffer.clear();
     juce::MidiBuffer midi;
-    midi.addEvent(juce::MidiMessage::noteOn(1, 30, 1.0f), 0);
     processor.processBlock(buffer, midi);
 
-    // No engine yet: the skeleton renders silence.
+    // No note, no sound.
     for (int ch = 0; ch < 2; ++ch)
         for (int i = 0; i < kBlock; ++i)
             REQUIRE(buffer.getSample(ch, i) == 0.0f);

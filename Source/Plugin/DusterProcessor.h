@@ -1,8 +1,17 @@
 #pragma once
 
+#include <atomic>
+#include <cstdint>
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
-// The Duster instrument: MIDI in, a stereo kick out. Silent until the engine lands.
+#include "Engine/DusterEngine.h"
+#include "Plugin/DusterParams.h"
+#include "Plugin/HostRateResampler.h"
+
+// The Duster instrument: MIDI in, the same kick on both output channels. The engine runs at 48 kHz
+// and HostRateResampler brings it to the host rate. Any note plays the same kick (TUNE sets the
+// pitch), velocity sets its level, and note-offs are ignored: a hit always plays out.
 class DusterProcessor final : public juce::AudioProcessor {
   public:
     DusterProcessor();
@@ -18,17 +27,36 @@ class DusterProcessor final : public juce::AudioProcessor {
     const juce::String getName() const override;
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
-    double getTailLengthSeconds() const override { return 0.0; }
+    // The longest LENGTH plus the longest rumble tail.
+    double getTailLengthSeconds() const override { return 3.5; }
 
-    int getNumPrograms() override { return 1; }
-    int getCurrentProgram() override { return 0; }
-    void setCurrentProgram(int) override {}
-    const juce::String getProgramName(int) override { return {}; }
+    int getNumPrograms() override;
+    int getCurrentProgram() override { return currentProgram_.load(); }
+    void setCurrentProgram(int index) override;
+    const juce::String getProgramName(int index) override;
     void changeProgramName(int, const juce::String&) override {}
 
-    void getStateInformation(juce::MemoryBlock&) override {}
-    void setStateInformation(const void*, int) override {}
+    void getStateInformation(juce::MemoryBlock& destData) override;
+    void setStateInformation(const void* data, int sizeInBytes) override;
+
+    juce::AudioProcessorValueTreeState& parameters() noexcept { return apvts_; }
+
+    // For the editor (message thread). An audition plays a full-velocity hit on the next block; the
+    // hit counter lets the page draw a playhead for every hit.
+    void requestAudition() noexcept { auditionRequested_.store(true); }
+    std::uint32_t hitCount() const noexcept { return hitCount_.load(); }
+    duster::KickSettings currentSettings() const noexcept { return reader_.read(); }
 
   private:
+    double hostBpm() const noexcept;
+
+    juce::AudioProcessorValueTreeState apvts_;
+    duster::params::ParamReader reader_;
+    duster::DusterEngine engine_;
+    duster::HostRateResampler resampler_;
+    std::atomic<int> currentProgram_{0};
+    std::atomic<bool> auditionRequested_{false};
+    std::atomic<std::uint32_t> hitCount_{0};
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DusterProcessor)
 };

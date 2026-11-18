@@ -39,5 +39,61 @@ size), UI exactly in Kikrame's style. Name: DUSTER (2026-11-17).
 - Samples: `~/LOCAL/Samples Triés/ONESHOTS/Drums/Kick/Mathys Lenne Kicks` (not in the repo)
 
 ## Current state
-- Mockup v1 and the design are approved. The implementation plan lives in the gitignored `docs/superpowers/`.
-- Task 1 done: build, CI, packaging and a silent instrument on `main`. Work continues on branch `v1` (off `dev`).
+- Tasks 1 to 10 done on branch `v1` (draft PR #1 into `dev`): engine, plugin, render and comparison tools, web UI.
+- Pack clones plan (2026-11-18): ring level fixed, proof, settings render and fitting tools done; baseline below.
+- 05 CRUSHED passes the Kick_05 gate at 44.1 and 48 kHz (`tools/compare_kick.py`). The 3-8 kHz attack stays about 19 dB short.
+- Task 11 first pass: 01 ROOM RUMBLE, 02 HIGH TONE, 06 METAL RING, 05 TAPS. Waiting on the ear pass.
+- Added on request: a DIVISION control for TAPS (1/4 to 1/32 with dotted and triplet steps).
+
+## Baseline (2026-11-19)
+All 20 pack kicks fitted with today's 14 knobs (`tools/fit_kick.py`, modes OFF and ROOM, each kick started from
+the closest existing preset), rendered from `docs/research/fits/baseline.tsv` and proven at 44.1 and 48 kHz
+(`tools/proof_pack.py`). Verdicts: 0 PASS, 0 CLOSE, 20 MISS at both rates. No limit changed from the spec.
+
+Misses at 48 kHz, as differences from each kick (the three worst energy-map regions only):
+
+| kick | 44k | 48k | misses |
+|---|---|---|---|
+| 01 | MISS | MISS | map: high bands in the first 20 ms 28 dB loud, high bands in the body 20 dB loud, mid bands in the body 16 dB loud; level 5.7 dB off louder from 185 to 430 ms; glide 40% off, low; peak-to-loudness 2.0 dB lower |
+| 02 | MISS | MISS | map: high bands in the body 18 dB loud, mid bands in the ending 14 dB quiet, mid bands in the body 12 dB quiet; level 5.5 dB off louder from 175 to 420 ms; glide 50% off, low; attack 8-16 kHz 7 dB short; peak-to-loudness 2.2 dB lower |
+| 03 | MISS | MISS | map: low bands in the ending 18 dB loud, mid bands in the ending 14 dB loud, mid bands in the body 11 dB loud; level 19.5 dB off louder from 150 to 340 ms; glide 68% off, low; peak-to-loudness 4.0 dB lower |
+| 04 | MISS | MISS | map: high bands in the body 19 dB loud, mid bands in the body 12 dB loud, low bands in the body 11 dB quiet; glide 52% off, low; attack 1-3 kHz 6 dB loud; attack 8-16 kHz 4 dB short; peak-to-loudness 2.4 dB lower |
+| 05 | MISS | MISS | map: low bands in the first 20 ms 10 dB quiet, low bands in the body 9 dB quiet, high bands in the first 20 ms 9 dB quiet; level 4.4 dB off louder from 95 to 395 ms; glide 11% off, low; attack 3-8 kHz 5 dB short; peak-to-loudness 3.0 dB lower |
+| 06 | MISS | MISS | map: mid bands in the body 31 dB loud, high bands in the body 31 dB loud, high bands in the first 20 ms 25 dB loud; level 10.0 dB off louder from 10 to 425 ms; glide 26% off, high; attack 1-3 kHz 6 dB loud |
+| 07 | MISS | MISS | map: high bands in the body 20 dB loud, high bands in the first 20 ms 17 dB loud, low bands in the body 15 dB quiet; level 11.9 dB off louder from 135 to 425 ms; glide 33% off, high; attack 1-3 kHz 6 dB loud; peak-to-loudness 3.8 dB lower |
+| 08 | MISS | MISS | map: high bands in the first 20 ms 12 dB loud, high bands in the body 12 dB loud, mid bands in the body 11 dB loud; glide 50% off, low; peak-to-loudness 1.3 dB lower |
+| 09 | MISS | MISS | map: high bands in the ending 55 dB quiet, high bands in the body 42 dB quiet, high bands in the first 20 ms 21 dB loud; level 5.4 dB off quieter from 85 to 850 ms; glide 37% off, low; 245 cents sharp; 17% long |
+| 10 | MISS | MISS | map: high bands in the body 28 dB loud, high bands in the first 20 ms 25 dB loud, mid bands in the body 22 dB loud; level 37.2 dB off quieter from 0 to 430 ms; glide 14% off, high; attack 8-16 kHz 4 dB short; peak-to-loudness 2.2 dB lower |
+| 11 | MISS | MISS | map: high bands in the body 44 dB quiet, low bands in the ending 34 dB quiet, mid bands in the body 31 dB quiet; level 25.1 dB off quieter from 190 to 430 ms; glide 52% off, low |
+| 12 | MISS | MISS | map: high bands in the ending 49 dB quiet, mid bands in the ending 29 dB quiet, high bands in the body 25 dB loud; level 14.1 dB off quieter from 0 to 575 ms; glide 25% off, high; peak-to-loudness 1.4 dB lower |
+| 13 | MISS | MISS | map: high bands in the body 14 dB loud, high bands in the first 20 ms 12 dB quiet, mid bands in the body 10 dB loud; level 5.8 dB off louder from 215 to 430 ms; glide 32% off, low; attack 3-8 kHz 9 dB short; peak-to-loudness 3.0 dB lower |
+| 14 | MISS | MISS | map: mid bands in the body 29 dB loud, high bands in the body 28 dB loud, high bands in the first 20 ms 14 dB loud; level 4.4 dB off louder from 230 to 440 ms; glide 31% off, low; attack 3-8 kHz 5 dB short; peak-to-loudness 2.7 dB lower |
+| 15 | MISS | MISS | map: high bands in the first 20 ms 19 dB quiet, high bands in the body 14 dB loud, mid bands in the first 20 ms 13 dB loud; level 4.8 dB off louder from 35 to 615 ms; glide 66% off, low; peak-to-loudness 4.7 dB lower |
+| 16 | MISS | MISS | map: mid bands in the body 20 dB loud, mid bands in the ending 16 dB loud, low bands in the body 14 dB loud; level 13.3 dB off louder from 0 to 410 ms; glide 45% off, low; attack 1-3 kHz 9 dB loud; attack 8-16 kHz 7 dB short; peak-to-loudness 3.6 dB lower |
+| 17 | MISS | MISS | map: high bands in the first 20 ms 21 dB quiet, mid bands in the first 20 ms 13 dB quiet, mid bands in the body 12 dB quiet; level 10.6 dB off louder from 165 to 405 ms; glide 12% off, low; peak-to-loudness 3.0 dB lower |
+| 18 | MISS | MISS | map: mid bands in the body 15 dB loud, low bands in the first 20 ms 14 dB loud, high bands in the body 12 dB loud; level 5.6 dB off louder from 185 to 210 ms; glide 57% off, low |
+| 19 | MISS | MISS | map: mid bands in the body 17 dB loud, high bands in the body 12 dB loud, mid bands in the first 20 ms 11 dB loud; level 5.4 dB off louder from 140 to 330 ms; glide 22% off, low; peak-to-loudness 2.6 dB lower |
+| 20 | MISS | MISS | map: mid bands in the body 17 dB loud, high bands in the body 10 dB quiet, low bands in the body 9 dB loud; level 5.9 dB off louder from 105 to 420 ms; glide 47% off, low; peak-to-loudness 3.3 dB lower |
+
+Candidates, ranked by the kicks whose misses each could fix:
+
+| Candidate | Kicks | Which |
+|---|---|---|
+| GLIDE (pitch glide off by 11 to 68 %, Duster always too low but 06, 07, 10, 12) | 20 | all |
+| DECAY (5 or more level-curve misses during the body) | 17 | 01 02 03 05 06 07 09 10 11 12 13 14 15 16 17 19 20 |
+| NOISE (attack short, or the top quiet in the first 20 ms) | 10 | 02 04 05 10 13 14 15 16 17 19 |
+| The ending (level misses or energy misses in the ending) | 7 | 02 03 09 11 12 16 18 |
+| Rumble (low bands quiet in the body or tail while the level curve passes) | 2 | 04 08 |
+| The ring (tonal lines) | 0 | none |
+
+Misses that fit no row:
+- High bands too loud during the body (16 kicks) and mid bands too loud during the body (13): the fitter reaches
+  for DRIVE, BITS, RATE and RING to get some top end, and they fill the whole body. NOISE (top end from the
+  start) and DECAY (less body) are the likely cure; to be checked after each.
+- Peak-to-loudness too low (16 kicks): Duster's body holds its level where the pack's falls, so DECAY should
+  close most of these.
+- 09 settles 245 cents sharp and runs 17 % long, and 10 runs 11 % long. 09's pitch rises again around 50 ms
+  (a named exception in the spec).
+
+Rumble reaches only 2 kicks, under the three-kick bar, so Task 11 is skipped unless ROOM misses tails after
+DECAY. The ring has no tonal-line misses, so it needs no work.
