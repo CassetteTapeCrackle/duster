@@ -28,6 +28,17 @@ jobs:
       - name: shellcheck
         run: shellcheck packaging/*.sh
 
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy==2.2.6
+      - name: Proof tool self-checks
+        run: python -m unittest discover -s tools/tests -v
+
   test:
     needs: lint
     runs-on: macos-15
