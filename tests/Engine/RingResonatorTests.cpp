@@ -5,7 +5,9 @@
 #include <cmath>
 #include <vector>
 
+#include "Engine/KickVoice.h"
 #include "Engine/RingResonator.h"
+#include "Engine/SafetyLimiter.h"
 #include "TestSignals.h"
 
 using namespace duster;
@@ -34,6 +36,27 @@ double decaySeconds(const std::vector<float>& x, double belowPeakDb) {
         if (std::abs(x[i]) > threshold)
             last = i;
     return static_cast<double>(last) / kOneSecond;
+}
+
+// One INIT hit with RING and RING PITCH set, until the voice stops.
+std::vector<float> initHit(float ring01, float ringPitchHz) {
+    const KickSettings init;
+    KickVoice voice;
+    voice.start(init, 1.0f);
+    const VoiceControls controls{init.drive01, init.toneHz, ring01, ringPitchHz, init.bits, init.holdFactor};
+    std::vector<float> out;
+    while (voice.active())
+        out.push_back(voice.next(controls));
+    return out;
+}
+
+// RMS of the spectrum between loHz and hiHz, in the spectrum's own units.
+double bandRms(const std::vector<float>& x, double loHz, double hiHz) {
+    const auto spec = test::spectrum(x, 48000.0);
+    double sum = 0.0;
+    for (std::size_t k = spec.binOf(loHz); k <= spec.binOf(hiHz); ++k)
+        sum += spec.magnitude[k] * spec.magnitude[k];
+    return std::sqrt(sum);
 }
 
 double meanOf(const std::vector<float>& x, std::size_t from) {
@@ -131,4 +154,19 @@ TEST_CASE("a DC step at note-on does not thump through the ring", "[ring]") {
     for (int i = 0; i < kOneSecond / 5; ++i)
         worst = std::max(worst, std::abs(ring.process(0.25f, false, 1.0f) - 0.25f));
     REQUIRE(worst < 0.5f);
+}
+
+TEST_CASE("RING changes the colour, not the level", "[ring]") {
+    const auto dry = initHit(0.0f, 900.0f);
+    const double dryLow = bandRms(dry, 30.0, 150.0);
+    for (const float ring : {0.0f, 0.5f, 1.0f})
+        for (const float pitch : {200.0f, 900.0f, 5000.0f, 13470.0f, 18000.0f}) {
+            INFO("ring " << ring << ", pitch " << pitch);
+            const auto hit = initHit(ring, pitch);
+            float peak = 0.0f;
+            for (const float x : hit)
+                peak = std::max(peak, std::abs(x));
+            REQUIRE(peak <= SafetyLimiter::kCeiling);
+            REQUIRE(std::abs(test::toDb(bandRms(hit, 30.0, 150.0) / dryLow)) <= 1.0);
+        }
 }

@@ -28,7 +28,7 @@ const presetValues = (tune, sweep, snap, length, drive, bits, rate, tone, ring, 
 export const PRESETS = [
   { name: "INIT", values: presetValues(0, 36, 8, 400, 0, 16, 0, 20000, 0, 900, 0, 50, 600, 5) },
   { name: "05 CRUSHED", values: presetValues(0.2, 56, 3.7, 390, 22, 8, 4, 6365, 0, 900, 0, 50, 600, 5) },
-  { name: "01 ROOM RUMBLE", values: presetValues(0.9, 58, 5.2, 425, 18, 9, 0, 12000, 0, 900, 1, 60, 900, 5) },
+  { name: "01 ROOM RUMBLE", values: presetValues(0.9, 58, 5.2, 425, 18, 9, 0, 12000, 0, 900, 1, 35, 900, 5) },
   { name: "02 HIGH TONE", values: presetValues(1.3, 39, 12, 410, 8, 16, 0, 20000, 60, 13470, 0, 50, 600, 5) },
   { name: "06 METAL RING", values: presetValues(4, 60, 5.8, 420, 10, 16, 0, 9000, 85, 903, 0, 50, 600, 5) },
   { name: "05 TAPS", values: presetValues(0.2, 56, 3.7, 390, 22, 8, 4, 6365, 0, 900, 2, 55, 700, 5) },

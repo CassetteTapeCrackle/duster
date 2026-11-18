@@ -10,6 +10,8 @@
 
 #include <juce_events/juce_events.h>
 
+#include "Engine/DusterEngine.h"
+#include "Engine/SafetyLimiter.h"
 #include "Plugin/DusterEditor.h"
 #include "Plugin/DusterParams.h"
 #include "Plugin/DusterPresets.h"
@@ -197,6 +199,22 @@ TEST_CASE("INIT holds every parameter's default", "[presets]") {
         INFO("param " << id);
         auto* param = p.parameters().getParameter(juce::String(std::string(id)));
         REQUIRE_THAT(param->convertFrom0to1(param->getDefaultValue()), WithinAbs(value, 1e-4));
+    }
+}
+
+TEST_CASE("no factory preset reaches the limiter", "[presets]") {
+    Juce juce;
+    const float clampsAt = SafetyLimiter::kCeiling * DusterEngine::kOutputGain * 0.989f; // 0.1 dB under
+    const auto presets = factoryPresets();
+    for (int i = 0; i < static_cast<int>(presets.size()); ++i) {
+        INFO("preset " << presets[static_cast<std::size_t>(i)].name);
+        DusterProcessor p;
+        p.setCurrentProgram(i);
+        const auto out = render(p, 48000.0, 512, 2.0, {{0, true}});
+        float peak = 0.0f;
+        for (const float x : out)
+            peak = std::max(peak, std::abs(x));
+        CHECK(peak < clampsAt);
     }
 }
 

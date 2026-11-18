@@ -34,7 +34,7 @@ constexpr std::array kPresets = {
            600.0f, 5.0f),
     // Kick_01: a long sweep into a driven low room.
     preset("01 ROOM RUMBLE", 0.9f, 58.0f, 5.2f, 425.0f, 18.0f, 9.0f, 0.0f, 12000.0f, 0.0f, 900.0f, 1.0f,
-           60.0f, 900.0f, 5.0f),
+           35.0f, 900.0f, 5.0f),
     // Kick_02: a slow sweep and a fixed 13.47 kHz tone that does not follow the note.
     preset("02 HIGH TONE", 1.3f, 39.0f, 12.0f, 410.0f, 8.0f, 16.0f, 0.0f, 20000.0f, 60.0f, 13470.0f, 0.0f,
            50.0f, 600.0f, 5.0f),

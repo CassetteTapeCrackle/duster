@@ -28,11 +28,11 @@ float RingResonator::process(float driven, bool strike, float env) noexcept {
     const float b = buffer_[static_cast<std::size_t>((whole + 1) % kBufferSize)];
     const float delayed = a + frac * (b - a);
 
-    const float excitation = inputDc_.process(driven + (strike ? env * ring_ : 0.0f));
-    const float comb = excitation + feedback_ * delayed;
+    const float top = inputDc_.process(driven);
+    const float comb = top + (strike ? env * ring_ : 0.0f) + feedback_ * delayed;
     buffer_[static_cast<std::size_t>(write_)] = comb;
     write_ = (write_ + 1) % kBufferSize;
-    return driven + ring_ * comb;
+    return driven + ring_ * ((1.0f - feedback_) * comb - top);
 }
 
 } // namespace duster
