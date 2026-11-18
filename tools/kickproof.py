@@ -323,10 +323,18 @@ def pitch_curve(x, until_s=None):
         if not trusted[max(0, lo - 1):min(len(trusted), hi)].all():
             continue
         idx = np.arange(max(0, int((ms / 1000 - half) * SR)), min(len(x), int((ms / 1000 + half) * SR) + 1), 2)
-        fine = np.polyfit(idx / SR - ms / 1000, phase[idx], 3)[2]
+        fine = _cubic_slope(idx / SR - ms / 1000, phase[idx])
         if abs(fine / hz[i] - 1) < 0.2:  # a refinement, never a different reading
             hz[i] = fine
     return grid, hz
+
+
+def _cubic_slope(t, y):
+    """Slope at t = 0 of the least-squares cubic through (t, y): np.polyfit's answer, a few times faster
+    (a 4 x 4 solve on t scaled to about 1)."""
+    scale = np.max(np.abs(t)) or 1.0
+    v = np.vander(t / scale, 4, increasing=True)
+    return np.linalg.solve(v.T @ v, v.T @ y)[1] / scale
 
 
 def _crossings(y):
@@ -390,7 +398,7 @@ def compare(render, ref):
     def add(name, worst, limit, detail, ratios):
         ratios = np.atleast_1d(ratios)
         mean = float(np.mean(ratios)) if len(ratios) else 0.0
-        measures.append(Measure(name, worst <= limit, worst <= 2 * limit, float(worst), limit, detail, mean))
+        measures.append(Measure(name, bool(worst <= limit), bool(worst <= 2 * limit), float(worst), limit, detail, mean))
         points.append(mean)
 
     # Energy map: the worst region's 90th percentile of error over limit.
