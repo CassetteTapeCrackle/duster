@@ -143,6 +143,7 @@ endif()
 # ---- Dev tool: render presets through the plugin for tuning (renders/ is gitignored) ----
 if(DUSTER_BUILD_PLUGIN)
     add_executable(DusterRender tools/DusterRender.cpp)
+    target_include_directories(DusterRender PRIVATE tools)
     target_link_libraries(DusterRender PRIVATE
         Duster DusterCore DusterWebUI juce::juce_audio_formats juce::juce_audio_utils juce::juce_audio_processors
         juce::juce_gui_extra juce::juce_dsp juce::juce_recommended_config_flags)
@@ -182,8 +183,9 @@ if(DUSTER_BUILD_TESTS)
 
     # Tests that drive the shipped plugin wrapper (needs JUCE, so only when the plugin is built).
     if(DUSTER_BUILD_PLUGIN)
-        add_executable(DusterPluginTests tests/Plugin/PluginSmokeTests.cpp tests/Plugin/PluginRenderTests.cpp)
-        target_include_directories(DusterPluginTests PRIVATE tests)
+        add_executable(DusterPluginTests tests/Plugin/PluginSmokeTests.cpp tests/Plugin/PluginRenderTests.cpp
+                       tests/Plugin/RenderSettingsTests.cpp)
+        target_include_directories(DusterPluginTests PRIVATE tests tools)
         target_link_libraries(DusterPluginTests PRIVATE
             Duster DusterCore DusterWebUI Catch2::Catch2WithMain
             juce::juce_gui_extra juce::juce_audio_utils juce::juce_audio_processors juce::juce_dsp
